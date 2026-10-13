@@ -14,63 +14,36 @@ struct SessionDetailView: View {
     private var settings: UserSettings { settingsRows.first?.asDomain() ?? UserSettings() }
 
     var body: some View {
-        ScrollView {
+        Group {
             if let session {
-                VStack(alignment: .leading, spacing: 16) {
-                    StaerkHeader(
-                        title: session.workoutName,
-                        subtitle: "\(Dates.prettyLong(key: session.dateKey)) · \(session.completed ? L10n.string("session.completed") : L10n.string("session.draft.status"))"
-                    )
+                Screen {
+                    ScreenHeader(
+                        eyebrow: Dates.prettyLong(key: session.dateKey),
+                        title: session.workoutName
+                    ) {
+                        Pill(
+                            text: session.completed ? L10n.string("session.completed") : L10n.string("session.draft.status"),
+                            tint: session.completed ? Palette.accent : Palette.inkSecondary,
+                            filled: session.completed
+                        )
+                    }
+
+                    summary(session)
 
                     ForEach(session.exercises) { block in
-                        GroupedCard {
-                            VStack(alignment: .leading, spacing: 10) {
-                                HStack(alignment: .top) {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(block.name.isEmpty ? block.exerciseId : block.name)
-                                            .font(Typeface.title(20))
-                                        Text(block.muscleGroup.localizedName)
-                                            .font(.footnote)
-                                            .foregroundStyle(Palette.muted)
-                                    }
-                                    Spacer()
-                                    NavigationLink(L10n.string("session.chart")) {
-                                        ExerciseHistoryView(exerciseID: block.exerciseId)
-                                    }
-                                    .font(.subheadline)
-                                    .foregroundStyle(Palette.blue)
-                                }
-                                ForEach(Array(block.sets.enumerated()), id: \.element.id) { index, set in
-                                    HStack {
-                                        Text(L10n.format("session.set", index + 1))
-                                            .foregroundStyle(Palette.muted)
-                                        Spacer()
-                                        Text(setLine(block: block, set: set))
-                                            .monospacedDigit()
-                                    }
-                                    .font(.subheadline)
-                                }
-                            }
-                            .padding(16)
-                        }
+                        exerciseCard(block)
                     }
 
-                    GroupedCard {
-                        DangerButton(title: L10n.string("session.delete")) {
-                            confirmDelete = true
-                        }
+                    DangerButton(title: L10n.string("session.delete")) {
+                        confirmDelete = true
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 28)
             } else {
-                Text(L10n.string("session.missing"))
-                    .foregroundStyle(Palette.muted)
-                    .padding()
+                Screen {
+                    EmptyState(symbol: "hourglass", message: L10n.string("session.missing"))
+                }
             }
         }
-        .staerkKeyboard()
-        .background(Palette.bg.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog(L10n.string("session.delete.confirm"), isPresented: $confirmDelete, titleVisibility: .visible) {
             Button(L10n.string("session.delete"), role: .destructive) {
@@ -81,8 +54,81 @@ struct SessionDetailView: View {
         }
     }
 
-    private func setLine(block: SessionExerciseBlock, set: SetLog) -> String {
-        let body = AdviceFormatter.formatSet(logType: block.logType, set: set, unit: settings.weightUnit)
-        return set.done ? "\(body) ✓" : body
+    private func summary(_ session: SessionLog) -> some View {
+        let minutes = session.finishedAt.map { max(1, Int($0.timeIntervalSince(session.startedAt) / 60)) }
+        return Card(padding: Space.l) {
+            HStack(spacing: 0) {
+                stat(value: "\(session.doneSetCount)", label: L10n.string("session.sets"))
+                divider
+                stat(value: "\(session.exercises.count)", label: L10n.string("training.exercises"))
+                if let minutes {
+                    divider
+                    stat(value: "\(minutes)", label: "min")
+                }
+            }
+        }
+    }
+
+    private var divider: some View {
+        Rectangle()
+            .fill(Palette.hairline)
+            .frame(width: 1, height: 36)
+    }
+
+    private func stat(value: String, label: String) -> some View {
+        VStack(spacing: Space.xxs) {
+            Text(value)
+                .font(Typeface.metric)
+                .monospacedDigit()
+                .foregroundStyle(Palette.ink)
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Palette.inkSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func exerciseCard(_ block: SessionExerciseBlock) -> some View {
+        Card {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    Text(block.name.isEmpty ? block.exerciseId : block.name)
+                        .font(Typeface.cardTitle)
+                        .foregroundStyle(Palette.ink)
+                    Text(block.muscleGroup.localizedName)
+                        .font(.footnote)
+                        .foregroundStyle(Palette.inkSecondary)
+                }
+                Spacer()
+                NavigationLink {
+                    ExerciseHistoryView(exerciseID: block.exerciseId)
+                } label: {
+                    CircleIcon(symbol: "chart.xyaxis.line", size: 36, tint: Palette.inkSecondary)
+                }
+                .buttonStyle(PressableStyle(scale: 0.92))
+                .accessibilityLabel(L10n.string("session.chart"))
+            }
+            .padding(.bottom, Space.m)
+
+            ForEach(Array(block.sets.enumerated()), id: \.element.id) { index, set in
+                HStack(spacing: Space.m) {
+                    CompletionCheck(isOn: set.done, tint: Palette.accent, size: 26, label: "\(index + 1)")
+                    Text(L10n.format("session.set", index + 1))
+                        .font(.subheadline)
+                        .foregroundStyle(Palette.inkSecondary)
+                    Spacer()
+                    Text(AdviceFormatter.formatSet(logType: block.logType, set: set, unit: settings.weightUnit))
+                        .font(.body.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(set.done ? Palette.ink : Palette.inkTertiary)
+                }
+                .padding(.vertical, Space.s)
+                .accessibilityElement(children: .combine)
+                .accessibilityValue(set.done ? L10n.string("a11y.done") : L10n.string("a11y.todo"))
+                if index < block.sets.count - 1 {
+                    RowDivider(inset: 38)
+                }
+            }
+        }
     }
 }

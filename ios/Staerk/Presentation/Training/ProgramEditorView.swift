@@ -18,60 +18,67 @@ struct ProgramEditorView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                StaerkHeader(title: L10n.string("program.edit.title"), subtitle: L10n.string("program.edit.body"))
+        Screen(keyboardDismiss: .immediately) {
+            ScreenHeader(title: L10n.string("program.edit.title"), subtitle: L10n.string("program.edit.body"))
 
-                GroupedCard {
-                    TextField(L10n.string("program.name"), text: Binding(
-                        get: { programName.isEmpty ? (program?.name ?? "") : programName },
-                        set: { programName = $0 }
-                    ))
-                    .padding(16)
-                    .onSubmit(saveName)
-                }
+            Card {
+                Eyebrow(text: L10n.string("program.name"))
+                TextField(L10n.string("program.name"), text: Binding(
+                    get: { programName.isEmpty ? (program?.name ?? "") : programName },
+                    set: { programName = $0 }
+                ))
+                .font(Typeface.cardTitle)
+                .foregroundStyle(Palette.ink)
+                .submitLabel(.done)
+                .padding(.top, Space.s)
+                .onSubmit(saveName)
+            }
 
-                ForEach(workouts) { workout in
-                    workoutSection(workout)
-                }
+            ForEach(workouts) { workout in
+                workoutSection(workout)
+            }
 
-                GroupedCard {
-                    HStack {
-                        TextField(L10n.string("program.workout.name"), text: $newWorkoutName)
-                        Button(L10n.string("program.workout.add")) { addWorkout() }
-                            .disabled(newWorkoutName.trimmingCharacters(in: .whitespaces).isEmpty)
+            Card(padding: Space.m) {
+                HStack(spacing: Space.m) {
+                    TextField(L10n.string("program.workout.name"), text: $newWorkoutName)
+                        .font(.body)
+                        .padding(.leading, Space.s)
+                        .submitLabel(.done)
+                        .onSubmit(addWorkout)
+                    Button {
+                        Haptics.tap()
+                        addWorkout()
+                    } label: {
+                        ButtonLabel(title: L10n.string("program.workout.add"), symbol: "plus")
                     }
-                    .padding(16)
+                    .buttonStyle(.staerk(.primary, compact: true))
+                    .disabled(newWorkoutName.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
+            }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    SectionLabel(text: L10n.string("program.templates"))
-                    ForEach(ProgramCatalog.all) { blueprint in
+            TitledSection(title: L10n.string("program.templates")) {
+                Card(padding: 0) {
+                    ForEach(Array(ProgramCatalog.all.enumerated()), id: \.element.id) { index, blueprint in
                         Button {
                             confirmTemplate = blueprint
                         } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(ProgramCatalog.localizedName(blueprint))
-                                    .font(.headline)
-                                    .foregroundStyle(.primary)
-                                Text(ProgramCatalog.localizedNotes(blueprint))
-                                    .font(.footnote)
-                                    .foregroundStyle(Palette.muted)
-                                    .multilineTextAlignment(.leading)
+                            ListRow(
+                                title: ProgramCatalog.localizedName(blueprint),
+                                detail: ProgramCatalog.localizedNotes(blueprint)
+                            ) {
+                                IconBadge(symbol: "square.stack.3d.up.fill", tint: Palette.accent, size: 36)
+                            } trailing: {
+                                Chevron()
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(16)
-                            .background(Palette.elevated, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
+                        if index < ProgramCatalog.all.count - 1 {
+                            RowDivider(inset: 64)
+                        }
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 28)
         }
-        .staerkKeyboardImmediate()
-        .background(Palette.bg.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editingExercise) { exercise in
             ExerciseEditorView(exercise: exercise)
@@ -95,56 +102,81 @@ struct ProgramEditorView: View {
 
     private func workoutSection(_ workout: WorkoutPlan) -> some View {
         let items = exerciseRows.filter { $0.workoutID == workout.id && !$0.archived }.map { $0.asDomain() }
-        return VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                SectionLabel(text: workout.name)
-                Spacer()
-                Button(role: .destructive) {
-                    try? app.training.deleteWorkout(id: workout.id)
-                } label: {
-                    Image(systemName: "trash")
-                }
-                .frame(width: 44, height: 44)
+        return TitledSection(title: workout.name) {
+            Button(role: .destructive) {
+                Haptics.warn()
+                try? app.training.deleteWorkout(id: workout.id)
+            } label: {
+                Image(systemName: "trash")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Palette.danger)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
-            ForEach(items) { exercise in
-                GroupedCard {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(exercise.name).font(.headline)
-                        Text("\(exercise.muscleGroup.localizedName) · \(exercise.defaultSets) × \(exercise.defaultRepsMin)–\(exercise.defaultRepsMax)")
-                            .font(.footnote)
-                            .foregroundStyle(Palette.muted)
-                        HStack {
-                            Button(L10n.string("common.edit")) { editingExercise = exercise }
-                                .frame(maxWidth: .infinity)
-                                .frame(minHeight: 44)
-                                .background(RoundedRectangle(cornerRadius: 12).stroke(Palette.hairline))
-                            Button(L10n.string("exercise.hide")) {
-                                var copy = exercise
-                                copy.archived = true
-                                try? app.training.save(copy)
+            .buttonStyle(PressableStyle(scale: 0.9))
+            .accessibilityLabel(L10n.string("common.delete.workout"))
+        } content: {
+            Card(padding: 0) {
+                ForEach(items) { exercise in
+                    HStack(spacing: 0) {
+                        Button {
+                            editingExercise = exercise
+                        } label: {
+                            ListRow(
+                                title: exercise.name,
+                                detail: "\(exercise.muscleGroup.localizedName) · \(exercise.defaultSets) × \(exercise.defaultRepsMin)–\(exercise.defaultRepsMax)"
+                            ) {
+                                EmptyView()
+                            } trailing: {
+                                EmptyView()
                             }
-                            .foregroundStyle(Palette.danger)
-                            .frame(minHeight: 44)
-                            .padding(.horizontal, 12)
-                            .background(Palette.fill, in: RoundedRectangle(cornerRadius: 12))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
+                        .accessibilityHint(L10n.string("common.edit"))
+
+                        Button {
+                            Haptics.tap()
+                            var copy = exercise
+                            copy.archived = true
+                            try? app.training.save(copy)
+                        } label: {
+                            Image(systemName: "eye.slash")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Palette.inkSecondary)
+                                .frame(width: 52, height: 52)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PressableStyle(scale: 0.9))
+                        .accessibilityLabel(L10n.string("exercise.hide"))
+                        .padding(.trailing, Space.xs)
                     }
-                    .padding(12)
+                    RowDivider(inset: Space.l)
                 }
+
+                Button {
+                    let draft = ExerciseDefinition(
+                        workoutID: workout.id,
+                        name: "",
+                        muscleGroup: .legs,
+                        sortOrder: (items.map(\.sortOrder).max() ?? 0) + 1
+                    )
+                    try? app.training.save(draft)
+                    editingExercise = draft
+                } label: {
+                    HStack(spacing: Space.s) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.body.weight(.semibold))
+                        Text(L10n.string("exercise.add"))
+                            .font(.body.weight(.semibold))
+                        Spacer()
+                    }
+                    .foregroundStyle(Palette.accentInk)
+                    .padding(.horizontal, Space.l)
+                    .frame(minHeight: 52)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.pressable)
             }
-            Button(L10n.string("exercise.add")) {
-                let draft = ExerciseDefinition(
-                    workoutID: workout.id,
-                    name: "",
-                    muscleGroup: .legs,
-                    sortOrder: (items.map(\.sortOrder).max() ?? 0) + 1
-                )
-                try? app.training.save(draft)
-                editingExercise = draft
-            }
-            .font(.headline)
-            .frame(maxWidth: .infinity, minHeight: 48)
         }
     }
 
@@ -225,7 +257,7 @@ struct ExerciseEditorView: View {
                         .lineLimit(3...8)
                 }
             }
-            .staerkKeyboardImmediate()
+            .staerkFormKeyboard()
             .staerkKeyboardDone()
             .navigationTitle(L10n.string("exercise.edit"))
             .navigationBarTitleDisplayMode(.inline)
@@ -255,41 +287,53 @@ struct ScheduleEditorView: View {
     private var workouts: [WorkoutPlan] { workoutRows.map { $0.asDomain() } }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                StaerkHeader(title: L10n.string("schedule.title"), subtitle: L10n.string("schedule.body"))
+        Screen(keyboardDismiss: .immediately) {
+            ScreenHeader(title: L10n.string("schedule.title"), subtitle: L10n.string("schedule.body"))
+
+            Card(padding: 0) {
                 ForEach(0..<7, id: \.self) { index in
-                    GroupedCard {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(L10n.string(WeekdayLabel.longKeys[index]))
-                                .font(.headline)
-                                .padding(.horizontal, 16)
-                                .padding(.top, 12)
-                            Picker(L10n.string("schedule.day"), selection: Binding(
-                                get: { ids[index] ?? "" },
-                                set: { ids[index] = $0.isEmpty ? nil : $0 }
-                            )) {
-                                Text(L10n.string("schedule.rest")).tag("")
-                                ForEach(workouts) { workout in
-                                    Text(workout.name).tag(workout.id)
-                                }
+                    let scheduled = ids[index] != nil
+                    HStack(spacing: Space.m) {
+                        Text(String(L10n.string(WeekdayLabel.shortKeys[index]).prefix(2)).uppercased())
+                            .font(.caption.weight(.heavy))
+                            .foregroundStyle(scheduled ? Palette.onAccent : Palette.inkSecondary)
+                            .frame(width: 36, height: 36)
+                            .background(scheduled ? Palette.accent : Palette.surfaceInset, in: Circle())
+                        Text(L10n.string(WeekdayLabel.longKeys[index]))
+                            .font(Typeface.rowTitle)
+                            .foregroundStyle(Palette.ink)
+                        Spacer()
+                        Picker(L10n.string("schedule.day"), selection: Binding(
+                            get: { ids[index] ?? "" },
+                            set: {
+                                Haptics.selection()
+                                ids[index] = $0.isEmpty ? nil : $0
                             }
-                            .pickerStyle(.menu)
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 12)
+                        )) {
+                            Text(L10n.string("schedule.rest")).tag("")
+                            ForEach(workouts) { workout in
+                                Text(workout.name).tag(workout.id)
+                            }
                         }
+                        .pickerStyle(.menu)
+                        .tint(scheduled ? Palette.accentInk : Palette.inkSecondary)
+                        .labelsHidden()
+                    }
+                    .padding(.horizontal, Space.l)
+                    .frame(minHeight: 60)
+                    .animation(Motion.snappy, value: scheduled)
+                    if index < 6 {
+                        RowDivider(inset: 64)
                     }
                 }
-                PrimaryButton(title: L10n.string("common.save")) {
-                    try? app.training.save(schedule: WeeklySchedule(workoutIDs: ids))
-                    Task { await app.refreshReminders() }
-                    Haptics.success()
-                }
             }
-            .padding(16)
+
+            PrimaryButton(title: L10n.string("common.save"), symbol: "checkmark") {
+                try? app.training.save(schedule: WeeklySchedule(workoutIDs: ids))
+                Task { await app.refreshReminders() }
+                Haptics.success()
+            }
         }
-        .staerkKeyboardImmediate()
-        .background(Palette.bg.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             ids = scheduleRows.first?.asDomain().workoutIDs ?? Array(repeating: nil, count: 7)

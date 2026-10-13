@@ -27,118 +27,185 @@ struct TrainingView: View {
     private var isTrainingDay: Bool { ScheduleResolver.isTrainingDay(date: Date(), schedule: schedule) }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                StaerkHeader(
-                    title: L10n.string("training.title"),
-                    subtitle: program?.name ?? L10n.string("training.empty.program")
-                )
-
-                nextCard
-
-                ForEach(workouts) { workout in
-                    workoutList(workout)
-                }
-
-                history
-
+        Screen {
+            ScreenHeader(
+                title: L10n.string("training.title"),
+                subtitle: program?.name ?? L10n.string("training.empty.program")
+            ) {
                 NavigationLink {
                     ProgramEditorView()
                 } label: {
-                    Text(L10n.string("training.edit.program"))
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity)
-                        .frame(minHeight: 56)
-                        .background(Palette.fill, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    CircleIcon(symbol: "slider.horizontal.3")
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressableStyle(scale: 0.92))
+                .accessibilityLabel(L10n.string("training.edit.program"))
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 28)
+
+            nextCard
+
+            ForEach(workouts) { workout in
+                workoutList(workout)
+            }
+
+            history
         }
-        .staerkKeyboard()
-        .background(Palette.bg.ignoresSafeArea())
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(L10n.string("training.title"))
         .toolbar(.hidden, for: .navigationBar)
     }
 
+    // MARK: Next session
+
+    private var nextWorkout: WorkoutPlan? {
+        if let todayDone { return workouts.first { $0.id == todayDone.workoutID } }
+        return picked
+    }
+
     private var nextCard: some View {
-        GroupedCard {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(isTrainingDay ? L10n.string("training.next.today") : L10n.string("training.next.rest"))
-                    .font(.footnote.weight(.bold))
-                    .foregroundStyle(Palette.volt)
-                    .textCase(.uppercase)
-                Text(todayDone?.workoutName ?? picked?.name ?? L10n.string("training.unscheduled"))
-                    .font(Typeface.display(32))
-                Text(isTrainingDay ? L10n.string("training.next.body") : L10n.string("training.rest.body"))
-                    .font(.subheadline)
-                    .foregroundStyle(Palette.muted)
-
-                HStack(spacing: 8) {
-                    NavigationLink {
-                        SessionView()
-                    } label: {
-                        Text(todayDone == nil ? L10n.string("training.start") : L10n.string("training.new"))
-                            .font(.headline.weight(.heavy))
-                            .foregroundStyle(Palette.voltForeground)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: 56)
-                            .background(Palette.volt, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        ScheduleEditorView()
-                    } label: {
-                        Text(L10n.string("training.schedule"))
-                            .font(.headline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: 56)
-                            .background(Palette.fill, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
+        Card(padding: Space.xl) {
+            HStack {
+                Eyebrow(
+                    text: isTrainingDay ? L10n.string("training.next.today") : L10n.string("training.next.rest"),
+                    color: Palette.accentInk
+                )
+                Spacer()
+                if todayDone != nil {
+                    Pill(text: L10n.string("session.completed"))
                 }
-                .padding(.top, 8)
             }
-            .padding(16)
+
+            Text(todayDone?.workoutName ?? picked?.name ?? L10n.string("training.unscheduled"))
+                .font(Typeface.display(38))
+                .foregroundStyle(Palette.ink)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+                .padding(.top, Space.xs)
+
+            if let nextWorkout {
+                Text(summary(for: nextWorkout))
+                    .font(.subheadline)
+                    .foregroundStyle(Palette.inkSecondary)
+                    .padding(.top, Space.xxs)
+            }
+
+            NavigationLink {
+                ScheduleEditorView()
+            } label: {
+                scheduleStrip
+            }
+            .buttonStyle(.pressable)
+            .padding(.top, Space.xl)
+
+            Text(isTrainingDay ? L10n.string("training.next.body") : L10n.string("training.rest.body"))
+                .font(.footnote)
+                .foregroundStyle(Palette.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, Space.l)
+
+            NavigationLink {
+                SessionView()
+            } label: {
+                ButtonLabel(
+                    title: todayDone == nil ? L10n.string("training.start") : L10n.string("training.new"),
+                    symbol: todayDone == nil ? "play.fill" : "plus"
+                )
+            }
+            .buttonStyle(todayDone == nil ? .staerkPrimary : .staerkSecondary)
+            .padding(.top, Space.l)
         }
     }
+
+    private var scheduleStrip: some View {
+        let week = Dates.weekKeys()
+        let today = Dates.key()
+        let trained = Set(sessions.filter(\.completed).map(\.dateKey))
+        return VStack(alignment: .leading, spacing: Space.m) {
+            HStack {
+                Text(L10n.string("training.schedule"))
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Palette.inkSecondary)
+                Spacer()
+                Chevron()
+            }
+            HStack(spacing: 0) {
+                ForEach(Array(week.enumerated()), id: \.offset) { index, key in
+                    let scheduled = schedule.workoutIDs[index] != nil
+                    let done = trained.contains(key)
+                    let isToday = key == today
+                    VStack(spacing: Space.s) {
+                        Text(String(L10n.string(WeekdayLabel.shortKeys[index]).prefix(1)).uppercased())
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(isToday ? Palette.accentInk : Palette.inkTertiary)
+                        ZStack {
+                            Circle()
+                                .fill(done ? Palette.accent : (scheduled ? Palette.accentSoft : Palette.surfaceInset))
+                            if done {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 11, weight: .black))
+                                    .foregroundStyle(Palette.onAccent)
+                            } else if scheduled {
+                                Image(systemName: "dumbbell.fill")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(Palette.accentInk)
+                            }
+                        }
+                        .frame(width: 30, height: 30)
+                        .overlay {
+                            if isToday {
+                                Circle().strokeBorder(Palette.ink, lineWidth: 1.5).padding(-4)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .padding(Space.m + 2)
+        .insetSurface()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L10n.string("training.schedule"))
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private func summary(for workout: WorkoutPlan) -> String {
+        let items = exerciseRows.filter { $0.workoutID == workout.id }.map { $0.asDomain() }
+        let muscles = Array(NSOrderedSet(array: items.map { $0.muscleGroup.localizedName })) as? [String] ?? []
+        return ([L10n.format("training.exercise.count", items.count)] + muscles.prefix(3)).joined(separator: " · ")
+    }
+
+    // MARK: Workouts
 
     private func workoutList(_ workout: WorkoutPlan) -> some View {
         let items = exerciseRows.filter { $0.workoutID == workout.id }.map { $0.asDomain() }
         let active = picked?.id == workout.id && todayDone == nil
-        return VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(text: active ? L10n.format("training.workout.today", workout.name) : workout.name)
-            GroupedCard {
+        return TitledSection(title: workout.name) {
+            if active {
+                Pill(text: L10n.string("tab.today"))
+            }
+        } content: {
+            Card(padding: 0) {
                 if items.isEmpty {
-                    Text(L10n.string("training.noexercises"))
-                        .foregroundStyle(Palette.muted)
-                        .padding(16)
+                    EmptyState(symbol: "dumbbell", message: L10n.string("training.noexercises"))
                 } else {
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, exercise in
                         NavigationLink {
                             ExerciseHistoryView(exerciseID: exercise.id)
                         } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(exercise.name).foregroundStyle(.primary)
-                                    Text(subtitle(exercise))
-                                        .font(.footnote)
-                                        .foregroundStyle(Palette.muted)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(Palette.muted)
+                            ListRow(title: exercise.name, detail: exercise.muscleGroup.localizedName) {
+                                Text("\(index + 1)")
+                                    .font(.subheadline.weight(.bold).monospacedDigit())
+                                    .foregroundStyle(Palette.inkSecondary)
+                                    .frame(width: 32, height: 32)
+                                    .background(Palette.surfaceInset, in: Circle())
+                            } trailing: {
+                                Text(spec(exercise))
+                                    .font(.subheadline.weight(.medium).monospacedDigit())
+                                    .foregroundStyle(Palette.inkSecondary)
+                                Chevron()
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
                         }
+                        .buttonStyle(.pressable)
                         if index < items.count - 1 {
-                            Divider().overlay(Palette.hairline).padding(.leading, 16)
+                            RowDivider(inset: 60)
                         }
                     }
                 }
@@ -146,37 +213,31 @@ struct TrainingView: View {
         }
     }
 
+    // MARK: History
+
     private var history: some View {
         let recent = Array(sessions.filter(\.completed).prefix(8))
-        return VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(text: L10n.string("training.history"))
-            GroupedCard {
+        return TitledSection(title: L10n.string("training.history")) {
+            Card(padding: 0) {
                 if recent.isEmpty {
-                    Text(L10n.string("training.history.empty"))
-                        .foregroundStyle(Palette.muted)
-                        .padding(16)
+                    EmptyState(symbol: "clock.arrow.circlepath", message: L10n.string("training.history.empty"))
                 } else {
                     ForEach(Array(recent.enumerated()), id: \.element.id) { index, session in
                         NavigationLink {
                             SessionDetailView(sessionID: session.id)
                         } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(session.workoutName).foregroundStyle(.primary)
-                                    Text(L10n.format("training.history.row", Dates.prettyShort(key: session.dateKey), session.doneSetCount))
-                                        .font(.footnote)
-                                        .foregroundStyle(Palette.muted)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(Palette.muted)
+                            ListRow(
+                                title: session.workoutName,
+                                detail: L10n.format("training.history.row", weekday(session.dateKey), session.doneSetCount)
+                            ) {
+                                DateBlock(dateKey: session.dateKey)
+                            } trailing: {
+                                Chevron()
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
                         }
+                        .buttonStyle(.pressable)
                         if index < recent.count - 1 {
-                            Divider().overlay(Palette.hairline).padding(.leading, 16)
+                            RowDivider(inset: 72)
                         }
                     }
                 }
@@ -184,10 +245,15 @@ struct TrainingView: View {
         }
     }
 
-    private func subtitle(_ exercise: ExerciseDefinition) -> String {
+    private func weekday(_ key: String) -> String {
+        let raw = Dates.parse(key).formatted(.dateTime.weekday(.wide))
+        return raw.prefix(1).uppercased() + raw.dropFirst()
+    }
+
+    private func spec(_ exercise: ExerciseDefinition) -> String {
         if exercise.logType == .seconds {
-            return "\(exercise.muscleGroup.localizedName) · \(exercise.defaultRepsMin)–\(exercise.defaultRepsMax) s"
+            return "\(exercise.defaultRepsMin)–\(exercise.defaultRepsMax) s"
         }
-        return "\(exercise.muscleGroup.localizedName) · \(exercise.defaultSets) × \(exercise.defaultRepsMin)–\(exercise.defaultRepsMax)"
+        return "\(exercise.defaultSets) × \(exercise.defaultRepsMin)–\(exercise.defaultRepsMax)"
     }
 }

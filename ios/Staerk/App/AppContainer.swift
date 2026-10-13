@@ -18,7 +18,7 @@ final class AppContainer {
     let notifications: NotificationScheduling
     let health: HealthKitService
 
-    init(container: ModelContainer, health: HealthKitService = HealthKitService()) {
+    init(container: ModelContainer, health: HealthKitService? = nil) {
         modelContainer = container
         modelContext = container.mainContext
         habits = SwiftDataHabitRepository(context: container.mainContext)
@@ -29,7 +29,7 @@ final class AppContainer {
         photos = SwiftDataPhotoRepository(context: container.mainContext)
         backup = SwiftDataBackupRepository(context: container.mainContext)
         notifications = NotificationScheduler()
-        self.health = health
+        self.health = health ?? HealthKitService()
     }
 
     func refreshReminders() async {

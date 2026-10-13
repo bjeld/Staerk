@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 
+@MainActor
 enum StoreBootstrap {
     static let currentStoreName = "staerk"
     static let legacyStoreName = "staerk-martin"
@@ -167,18 +168,18 @@ enum StoreBootstrap {
 
         let settingsDTO = snapshot.settings
         let reminder = settingsDTO?.reminderTime ?? "06:15"
-        var water = HabitCatalog.make(.water, sortOrder: 1)
+        var water = HabitCatalog.make(HabitCatalog.water, sortOrder: 1)
         water.goal = max(1, settingsDTO?.waterGoal ?? 8)
         water.reminderEnabled = false
-        var creatine = HabitCatalog.make(.creatine, sortOrder: 0)
+        var creatine = HabitCatalog.make(HabitCatalog.creatine, sortOrder: 0)
         creatine.reminderEnabled = settingsDTO?.creatineReminder ?? true
         creatine.reminderTime = reminder
-        var alcohol = HabitCatalog.make(.alcoholFree, sortOrder: 2)
-        var workoutHabit = HabitCatalog.make(.workout, sortOrder: 3)
+        let alcohol = HabitCatalog.make(HabitCatalog.alcoholFree, sortOrder: 2)
+        var workoutHabit = HabitCatalog.make(HabitCatalog.workout, sortOrder: 3)
         workoutHabit.reminderEnabled = settingsDTO?.workoutReminder ?? true
         workoutHabit.reminderTime = reminder
         workoutHabit.weekdays = packed.schedule.trainingWeekdays
-        var golf = HabitCatalog.make(.golf, sortOrder: 4)
+        let golf = HabitCatalog.make(HabitCatalog.golf, sortOrder: 4)
 
         let habits = [creatine, water, alcohol, workoutHabit, golf]
         for habit in habits {

@@ -17,9 +17,9 @@ struct RootView: View {
                 OnboardingView()
             }
         }
-        .tint(Palette.volt)
+        .tint(Palette.accentInk)
         .preferredColorScheme(settings.theme.preferredColorScheme)
-        .staerkScreen()
+        .background(Palette.canvas.ignoresSafeArea())
         .staerkKeyboardDone()
         .task {
             if app.health.didRequestAuthorization {
@@ -53,21 +53,21 @@ struct MainTabView: View {
                 HabitsView()
             }
             .tabItem {
-                Label(L10n.string("tab.habits"), systemImage: "flame.fill")
+                Label(L10n.string("tab.habits"), systemImage: "checkmark.circle.fill")
             }
 
             NavigationStack {
                 BodyProgressView()
             }
             .tabItem {
-                Label(L10n.string("tab.body"), systemImage: "figure.stand")
+                Label(L10n.string("tab.body"), systemImage: "chart.line.uptrend.xyaxis")
             }
 
             NavigationStack {
                 SettingsView()
             }
             .tabItem {
-                Label(L10n.string("tab.more"), systemImage: "ellipsis")
+                Label(L10n.string("tab.more"), systemImage: "gearshape.fill")
             }
         }
     }
