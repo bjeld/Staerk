@@ -3,7 +3,11 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const rawBase = process.env.VITE_BASE || '/'
+const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     tailwindcss(),
@@ -19,8 +23,8 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         lang: 'da',
-        start_url: '/',
-        scope: '/',
+        start_url: './',
+        scope: './',
         categories: ['health', 'fitness', 'lifestyle'],
         icons: [
           {
@@ -43,7 +47,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,ico,webmanifest}'],
-        navigateFallback: '/index.html',
+        navigateFallback: `${base}index.html`,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,

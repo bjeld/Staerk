@@ -40,24 +40,29 @@ Android: Chrome-menu → **Tilføj til startskærm**.
 
 Notifikationer (kreatin kl. 06:15 som standard) kræver tilladelse. På iPhone: iOS 16.4+ og installeret på hjemmeskærmen. Påmindelsen affyres, når appen er åben eller bliver åbnet efter tidspunktet — en statisk PWA kan ikke vække telefonen i baggrunden pålidelig.
 
-## Deploy (statisk host)
+## GitHub Pages
 
-Bygget er rene filer i `dist/`.
+Live-host er **GitHub Pages** (ikke Cloudflare). Workflowen `.github/workflows/pages.yml` bygger med base path `/health-app/` og publicerer `dist/`.
+
+Forventet URL, når repoet hedder `health-app` under dit GitHub-brugernavn:
+
+`https://<dit-github-brugernavn>.github.io/health-app/`
+
+1. Opret et **offentligt** GitHub-repo ved navn `health-app`.
+2. Push `main` til det repo.
+3. Repo → Settings → Pages → **Source: GitHub Actions** (første workflow-kørsel slår det ofte til selv).
+4. Vent på workflowen **Deploy GitHub Pages**.
+
+Lokalt tjek af samme subpath:
 
 ```bash
-npm run build
+VITE_BASE=/health-app/ npm run build
+npm run preview
 ```
 
-Upload `dist/` til Cloudflare Pages, Netlify, GitHub Pages eller enhver static host.
+Åbn derefter [http://127.0.0.1:47321/health-app/](http://127.0.0.1:47321/health-app/).
 
-- Netlify/Cloudflare: `public/_redirects` sender alle ruter til `index.html`.
-- GitHub Pages: kopiér `dist/index.html` til `dist/404.html`, så deep links virker.
-
-Eksempel med Cloudflare Pages (wrangler):
-
-```bash
-npx wrangler pages deploy dist --project-name staerk
-```
+`dist/404.html` er en kopi af `index.html`, så deep links virker. `public/.nojekyll` forhindrer Jekyll i at skjule filer.
 
 ## Backup
 

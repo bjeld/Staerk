@@ -15,10 +15,11 @@ import { ExercisePage } from './pages/ExercisePage'
 import { HabitsPage } from './pages/HabitsPage'
 import { ProgressPage } from './pages/ProgressPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { routerBasename } from './lib/base'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename()}>
       <ThemeAndReminders />
       <Routes>
         <Route element={<Layout />}>
