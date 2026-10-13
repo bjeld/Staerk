@@ -1,0 +1,54 @@
+{
+  "sourceLanguage": "da",
+  "strings": {
+    "NSCameraUsageDescription": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STÆRK bruger kameraet til fremskridtsfotos, så du kan sammenligne din krop over tid."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STÆRK uses the camera for progress photos so you can compare your body over time."
+          }
+        }
+      }
+    },
+    "NSHealthShareUsageDescription": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STÆRK læser skridt, gang- og løbeafstand, aktiv energi, træningspas (herunder golf) og kropsvægt fra Apple Sundhed, så dagens aktivitet kan vises på oversigten."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STÆRK reads steps, walking and running distance, active energy, workouts (including golf) and body mass from Apple Health so today’s activity can appear on the overview."
+          }
+        }
+      }
+    },
+    "NSHealthUpdateUsageDescription": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STÆRK gemmer styrketræning og kropsvægt i Apple Sundhed, så dine pas og din vægt hænger sammen med Fitness og Sundhed."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STÆRK saves strength training and body mass to Apple Health so your sessions and weight stay in sync with Fitness and Health."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
