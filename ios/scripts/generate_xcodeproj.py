@@ -134,7 +134,7 @@ def main() -> None:
 
     w("/* Begin PBXFileReference section */")
     w(
-        f"\t\t{product_ref} /* STÆRK.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = \"STÆRK.app\"; sourceTree = BUILT_PRODUCTS_DIR; }};"
+        f"\t\t{product_ref} /* Staerk.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Staerk.app; sourceTree = BUILT_PRODUCTS_DIR; }};"
     )
     for key, (ident, name, ftype) in file_refs.items():
         if key.endswith(".framework"):
@@ -159,7 +159,7 @@ def main() -> None:
             kids.append((group_ids["Frameworks"], "Frameworks"))
             return kids
         if folder == "Products":
-            kids.append((product_ref, "STÆRK.app"))
+            kids.append((product_ref, "Staerk.app"))
             return kids
         if folder == "Frameworks":
             for name, ident in fw_ids.items():
@@ -208,7 +208,7 @@ def main() -> None:
     w(f"\t\t{group_ids['Products']} /* Products */ = {{")
     w("\t\t\tisa = PBXGroup;")
     w("\t\t\tchildren = (")
-    w(f"\t\t\t\t{product_ref} /* STÆRK.app */,")
+    w(f"\t\t\t\t{product_ref} /* Staerk.app */,")
     w("\t\t\t);")
     w("\t\t\tname = Products;")
     w("\t\t\tsourceTree = \"<group>\";")
@@ -275,8 +275,8 @@ def main() -> None:
     w("\t\t\tdependencies = (")
     w("\t\t\t);")
     w("\t\t\tname = Staerk;")
-    w("\t\t\tproductName = STÆRK;")
-    w(f"\t\t\tproductReference = {product_ref} /* STÆRK.app */;")
+    w("\t\t\tproductName = Staerk;")
+    w(f"\t\t\tproductReference = {product_ref} /* Staerk.app */;")
     w("\t\t\tproductType = \"com.apple.product-type.application\";")
     w("\t\t};")
     w("/* End PBXNativeTarget section */")
@@ -358,7 +358,7 @@ def main() -> None:
 				);
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = dk.bjeld.staerk;
-				PRODUCT_NAME = "STÆRK";
+				PRODUCT_NAME = Staerk;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -517,7 +517,7 @@ def main() -> None:
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "{target_id}"
-               BuildableName = "STÆRK.app"
+               BuildableName = "Staerk.app"
                BlueprintName = "Staerk"
                ReferencedContainer = "container:Staerk.xcodeproj">
             </BuildableReference>
@@ -548,7 +548,7 @@ def main() -> None:
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "{target_id}"
-            BuildableName = "STÆRK.app"
+            BuildableName = "Staerk.app"
             BlueprintName = "Staerk"
             ReferencedContainer = "container:Staerk.xcodeproj">
          </BuildableReference>
@@ -565,7 +565,7 @@ def main() -> None:
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "{target_id}"
-            BuildableName = "STÆRK.app"
+            BuildableName = "Staerk.app"
             BlueprintName = "Staerk"
             ReferencedContainer = "container:Staerk.xcodeproj">
          </BuildableReference>

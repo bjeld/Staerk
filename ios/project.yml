@@ -29,7 +29,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dk.bjeld.staerk
-        PRODUCT_NAME: STÆRK
+        PRODUCT_NAME: Staerk
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_FILE: Staerk/Info.plist
