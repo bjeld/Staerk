@@ -250,40 +250,60 @@ struct TodayView: View {
             title: L10n.string("today.habits"),
             detail: todaysHabits.isEmpty ? nil : "\(doneCount)/\(todaysHabits.count)"
         ) {
-            Card(padding: 0) {
-                if todaysHabits.isEmpty {
+            if todaysHabits.isEmpty {
+                Card(padding: 0) {
                     EmptyState(symbol: "sparkles", message: L10n.string("today.nohabits"))
-                } else {
-                    ForEach(Array(todaysHabits.enumerated()), id: \.element.id) { index, habit in
-                        habitRow(habit)
-                        if index < todaysHabits.count - 1 {
-                            RowDivider(inset: 72)
+                }
+            } else {
+                HStack(alignment: .top, spacing: Space.m) {
+                    ForEach(Array(habitColumns.enumerated()), id: \.offset) { _, column in
+                        VStack(spacing: Space.m) {
+                            ForEach(column, id: \.id) { habit in
+                                habitTile(habit)
+                            }
                         }
+                        .frame(maxWidth: .infinity)
                     }
                 }
             }
         }
     }
 
+    /// Greedy masonry: each habit goes to the shorter column, weighted by how tall its tile renders.
+    private var habitColumns: [[Habit]] {
+        var columns: [[Habit]] = [[], []]
+        var heights: [Double] = [0, 0]
+        for habit in todaysHabits {
+            let weight: Double = habit.kind == .counter ? 1.45 : (habit.notes.isEmpty ? 1 : 1.25)
+            let target = heights[0] <= heights[1] ? 0 : 1
+            columns[target].append(habit)
+            heights[target] += weight
+        }
+        return columns
+    }
+
     @ViewBuilder
-    private func habitRow(_ habit: Habit) -> some View {
+    private func habitTile(_ habit: Habit) -> some View {
         let entry = todayEntries.first { $0.habitID == habit.id } ?? HabitEntry(habitID: habit.id, dateKey: todayKey)
+        let flourish = HabitFlourish(symbol: habit.symbol, kind: habit.kind)
         switch habit.kind {
         case .boolean, .workout:
-            HabitCheckRow(
+            HabitCheckTile(
                 title: habit.name,
                 hint: habit.notes,
                 tint: Color(hexString: habit.tintHex),
                 symbol: habit.symbol,
+                flourish: flourish,
                 isOn: HabitScoring.isComplete(habit: habit, entry: entry, trained: trainedToday)
             ) {
                 toggle(habit, entry: entry)
             }
         case .counter:
-            HabitCounterRow(
+            HabitCounterTile(
                 title: habit.name,
                 tint: Color(hexString: habit.tintHex),
                 symbol: habit.symbol,
+                flourish: flourish,
                 value: entry.countValue,
                 goal: habit.goal
             ) { next in
@@ -391,69 +411,412 @@ struct TodayView: View {
     }
 }
 
-// MARK: - Habit rows
+// MARK: - Habit tiles
 
-private struct HabitCheckRow: View {
+private let tileRadius = Radius.card - 4
+private let glyphSize: CGFloat = 44
+private let checkSize: CGFloat = 30
+
+/// How a habit's icon celebrates, picked from its symbol so each habit reacts in character.
+private enum HabitFlourish {
+    case splash
+    case wiggle
+    case lift
+    case jump
+    case swing
+    case stamp
+    case bounce
+
+    init(symbol: String, kind: HabitKind) {
+        let s = symbol.lowercased()
+        if s.contains("drop") || s.contains("cup") || s.contains("mug") || s.contains("waterbottle") {
+            self = .splash
+        } else if s.contains("pill") || s.contains("capsule") || s.contains("fork") || s.contains("leaf") {
+            self = .wiggle
+        } else if kind == .workout || s.contains("dumbbell") || s.contains("strength") {
+            self = .lift
+        } else if s.contains("golf") || s.contains("tennis") || s.contains("baseball") {
+            self = .swing
+        } else if s.contains("figure") || s.contains("bicycle") || s.contains("shoe") {
+            self = .jump
+        } else if s.contains("nosign") || s.contains("slash") || s.contains("xmark") {
+            self = .stamp
+        } else {
+            self = .bounce
+        }
+    }
+
+    var peakScale: Double {
+        switch self {
+        case .stamp: return 1.24
+        case .lift, .jump: return 1.14
+        default: return 1.1
+        }
+    }
+
+    /// Vertical pull on burst particles: droplets fall, effort sparks rise.
+    var drift: Double {
+        switch self {
+        case .splash: return 26
+        case .lift, .jump: return -22
+        default: return 0
+        }
+    }
+}
+
+private struct FlourishEffect: ViewModifier {
+    var flourish: HabitFlourish
+    var trigger: Int
+
+    func body(content: Content) -> some View {
+        switch flourish {
+        case .splash: content.symbolEffect(.bounce.down.byLayer, value: trigger)
+        case .wiggle: content.symbolEffect(.wiggle.byLayer, value: trigger)
+        case .lift: content.symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(2)), value: trigger)
+        case .jump: content.symbolEffect(.bounce.up.byLayer, value: trigger)
+        case .swing: content.symbolEffect(.rotate.byLayer, value: trigger)
+        case .stamp: content.symbolEffect(.bounce.down.wholeSymbol, value: trigger)
+        case .bounce: content.symbolEffect(.bounce.byLayer, value: trigger)
+        }
+    }
+}
+
+private struct HabitGlyph: View {
+    var symbol: String
+    var tint: Color
+    var onFill: Bool
+    var flourish: HabitFlourish
+    var trigger: Int
+
+    var body: some View {
+        let peak = flourish.peakScale
+        RoundedRectangle(cornerRadius: 13, style: .continuous)
+            .fill(onFill ? tint.onTint.opacity(0.14) : tint.opacity(0.16))
+            .frame(width: glyphSize, height: glyphSize)
+            .overlay {
+                Image(systemName: symbol)
+                    .font(.system(size: 19, weight: .bold))
+                    .foregroundStyle(onFill ? tint.onTint : tint.legible)
+                    .modifier(FlourishEffect(flourish: flourish, trigger: trigger))
+            }
+            .keyframeAnimator(initialValue: 1.0, trigger: trigger) { content, scale in
+                content.scaleEffect(scale)
+            } keyframes: { _ in
+                SpringKeyframe(peak, duration: 0.14, spring: .snappy)
+                SpringKeyframe(1.0, duration: 0.5, spring: .bouncy)
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+/// A ring of particles thrown out of the glyph when a habit is completed.
+private struct Burst: View {
+    var trigger: Int
+    var color: Color
+    var drift: Double
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        if !reduceMotion {
+            KeyframeAnimator(initialValue: 0.0, trigger: trigger) { t in
+                ZStack {
+                    ForEach(0..<10, id: \.self) { index in
+                        let angle = Double(index) / 10 * 2 * .pi + 0.35
+                        let reach = 30 + Double(index % 3) * 9
+                        let dot: CGFloat = index.isMultiple(of: 2) ? 6 : 4
+                        Circle()
+                            .fill(color)
+                            .frame(width: dot, height: dot)
+                            .scaleEffect(1 - t * 0.5)
+                            .offset(
+                                x: cos(angle) * reach * t,
+                                y: sin(angle) * reach * t + drift * t * t
+                            )
+                            .opacity(t == 0 ? 0 : 1 - t)
+                    }
+                }
+            } keyframes: { _ in
+                CubicKeyframe(1.0, duration: 0.65)
+            }
+            .frame(width: glyphSize, height: glyphSize)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+}
+
+/// The tile's colour flood: a circle that grows out of `origin` to cover the whole tile.
+private struct InkFill: View {
+    var isOn: Bool
+    var tint: Color
+    var origin: (CGSize) -> CGPoint
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        GeometryReader { geo in
+            let diameter = hypot(geo.size.width, geo.size.height) * 2.2
+            Circle()
+                .fill(tint)
+                .frame(width: diameter, height: diameter)
+                .scaleEffect(isOn || reduceMotion ? 1 : 0.001)
+                .opacity(reduceMotion && !isOn ? 0 : 1)
+                .position(origin(geo.size))
+        }
+        .background(Palette.surface)
+        .animation(.spring(response: 0.55, dampingFraction: 0.86), value: isOn)
+    }
+}
+
+private struct TileCheck: View {
+    var isOn: Bool
+    var tint: Color
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .strokeBorder(Palette.inkTertiary, lineWidth: 2)
+                .opacity(isOn ? 0 : 1)
+            Circle()
+                .fill(tint.onTint)
+                .scaleEffect(isOn ? 1 : 0.2)
+                .opacity(isOn ? 1 : 0)
+            Image(systemName: "checkmark")
+                .font(.system(size: 13, weight: .heavy))
+                .foregroundStyle(tint)
+                .scaleEffect(isOn ? 1 : 0.4)
+                .opacity(isOn ? 1 : 0)
+                .symbolEffect(.bounce, value: isOn)
+        }
+        .frame(width: checkSize, height: checkSize)
+        .animation(Motion.bouncy.delay(isOn ? 0.08 : 0), value: isOn)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct TileBorder: ViewModifier {
+    var visible: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .clipShape(RoundedRectangle(cornerRadius: tileRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: tileRadius, style: .continuous)
+                    .strokeBorder(Palette.stroke, lineWidth: 1)
+                    .opacity(visible ? 1 : 0)
+            }
+    }
+}
+
+private struct HabitCheckTile: View {
     var title: String
     var hint: String
     var tint: Color
     var symbol: String
+    var flourish: HabitFlourish
     var isOn: Bool
     var action: () -> Void
 
+    @State private var burst = 0
+
     var body: some View {
         Button {
-            Haptics.tap()
+            if isOn { Haptics.tap() } else { Haptics.success() }
             withAnimation(Motion.bouncy) {
                 action()
             }
-            if !isOn { Haptics.success() }
         } label: {
-            ListRow(title: title, detail: hint) {
-                IconBadge(symbol: symbol, tint: tint, size: 42, style: isOn ? .solid : .soft)
-                    .animation(Motion.bouncy, value: isOn)
-            } trailing: {
-                CompletionCheck(isOn: isOn, tint: tint)
-                    .frame(width: 44, height: 44)
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top) {
+                    HabitGlyph(symbol: symbol, tint: tint, onFill: isOn, flourish: flourish, trigger: burst)
+                        .overlay { Burst(trigger: burst, color: tint.onTint.opacity(0.85), drift: flourish.drift) }
+                    Spacer(minLength: Space.s)
+                    TileCheck(isOn: isOn, tint: tint)
+                }
+                Spacer(minLength: Space.l)
+                Text(title)
+                    .font(Typeface.rowTitle)
+                    .foregroundStyle(isOn ? tint.onTint : Palette.ink)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                if !hint.isEmpty {
+                    Text(hint)
+                        .font(.footnote)
+                        .foregroundStyle(isOn ? tint.onTint.opacity(0.72) : Palette.inkSecondary)
+                        .lineLimit(3)
+                        .multilineTextAlignment(.leading)
+                        .padding(.top, Space.xxs)
+                }
             }
+            .padding(Space.l)
+            .frame(maxWidth: .infinity, minHeight: 128, alignment: .topLeading)
+            .background {
+                InkFill(isOn: isOn, tint: tint) { size in
+                    CGPoint(x: size.width - Space.l - checkSize / 2, y: Space.l + checkSize / 2)
+                }
+            }
+            .modifier(TileBorder(visible: !isOn))
+            .contentShape(RoundedRectangle(cornerRadius: tileRadius, style: .continuous))
         }
-        .buttonStyle(.pressable)
-        .accessibilityElement(children: .combine)
+        .buttonStyle(PressableStyle(scale: 0.96))
+        .onChange(of: isOn) { _, on in
+            if on { burst += 1 }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityHint(hint)
         .accessibilityAddTraits(.isButton)
         .accessibilityValue(isOn ? String(localized: "a11y.done") : String(localized: "a11y.todo"))
     }
 }
 
-private struct HabitCounterRow: View {
+/// Counter habits fill up like a glass: the level rises with each tap and sloshes as it lands.
+private struct HabitCounterTile: View {
     var title: String
     var tint: Color
     var symbol: String
+    var flourish: HabitFlourish
     var value: Int
     var goal: Int
     var onChange: (Int) -> Void
 
+    @State private var shownLevel = 0.0
+    @State private var slosh = 0.0
+    @State private var bump = 0
+    @State private var burst = 0
+
+    private var isComplete: Bool { value >= goal }
+    private var level: Double { goal > 0 ? min(1, Double(value) / Double(goal)) : 0 }
+
     var body: some View {
-        HStack(spacing: Space.m) {
-            IconBadge(symbol: symbol, tint: tint, size: 42, style: value >= goal ? .solid : .soft)
-                .animation(Motion.bouncy, value: value >= goal)
-            VStack(alignment: .leading, spacing: Space.s) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(title)
-                        .font(Typeface.rowTitle)
-                        .foregroundStyle(Palette.ink)
-                    Spacer(minLength: Space.xs)
-                    Text(verbatim: "\(value)/\(goal)")
-                        .font(.footnote.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(value >= goal ? tint.legible : Palette.inkSecondary)
-                        .contentTransition(.numericText(value: Double(value)))
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top) {
+                HabitGlyph(symbol: symbol, tint: tint, onFill: isComplete, flourish: flourish, trigger: bump)
+                    .overlay { Burst(trigger: burst, color: tint.onTint.opacity(0.85), drift: flourish.drift) }
+                Spacer(minLength: Space.s)
+                if value > 0 {
+                    stepButton(symbol: "minus", size: checkSize, prominent: false) { decrement() }
+                        .transition(.scale.combined(with: .opacity))
                 }
-                SegmentedProgress(value: value, goal: goal, tint: tint)
             }
-            .accessibilityElement(children: .combine)
-            CounterControl(value: value, goal: goal, onChange: onChange)
+            Spacer(minLength: Space.xl)
+            Text(title)
+                .font(Typeface.rowTitle)
+                .foregroundStyle(isComplete ? tint.onTint : Palette.ink)
+                .lineLimit(2)
+            HStack(alignment: .bottom) {
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text("\(value)")
+                        .font(Typeface.display(34))
+                        .monospacedDigit()
+                        .contentTransition(.numericText(value: Double(value)))
+                        .foregroundStyle(isComplete ? tint.onTint : Palette.ink)
+                    Text(verbatim: "/\(goal)")
+                        .font(Typeface.title(16))
+                        .foregroundStyle(isComplete ? tint.onTint.opacity(0.7) : Palette.inkSecondary)
+                }
+                Spacer(minLength: Space.xs)
+                stepButton(symbol: "plus", size: 40, prominent: true) { increment() }
+            }
         }
-        .padding(.horizontal, Space.l)
-        .padding(.vertical, Space.m + 1)
+        .padding(Space.l)
+        .frame(maxWidth: .infinity, minHeight: 176, alignment: .topLeading)
+        .background {
+            ZStack {
+                Palette.surface
+                LiquidShape(level: shownLevel, phase: slosh, amplitude: 5)
+                    .fill(isComplete ? tint : tint.opacity(0.22))
+            }
+        }
+        .modifier(TileBorder(visible: !isComplete))
+        .contentShape(RoundedRectangle(cornerRadius: tileRadius, style: .continuous))
+        .onTapGesture { increment() }
         .animation(Motion.snappy, value: value)
+        .animation(Motion.bouncy, value: isComplete)
+        .onAppear { shownLevel = level }
+        .onChange(of: level) { _, next in
+            withAnimation(.spring(response: 0.9, dampingFraction: 0.72)) {
+                shownLevel = next
+                slosh += .pi * 2
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(Text(verbatim: "\(value)/\(goal)"))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: increment()
+            case .decrement: if value > 0 { decrement() }
+            @unknown default: break
+            }
+        }
+    }
+
+    private func increment() {
+        Haptics.tap()
+        onChange(value + 1)
+        bump += 1
+        if value + 1 == goal {
+            Haptics.success()
+            burst += 1
+        }
+    }
+
+    private func decrement() {
+        Haptics.tap()
+        onChange(max(0, value - 1))
+    }
+
+    private func stepButton(symbol: String, size: CGFloat, prominent: Bool, action: @escaping () -> Void) -> some View {
+        let fill: Color = prominent
+            ? (isComplete ? tint.onTint : tint)
+            : (isComplete ? tint.onTint.opacity(0.16) : Palette.surfaceInsetStrong)
+        let ink: Color = prominent
+            ? (isComplete ? tint : tint.onTint)
+            : (isComplete ? tint.onTint : Palette.inkSecondary)
+        return Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: size * 0.38, weight: .heavy))
+                .foregroundStyle(ink)
+                .frame(width: size, height: size)
+                .background(fill, in: Circle())
+                .frame(width: max(size, 44), height: max(size, 44))
+                .contentShape(Circle())
+        }
+        .buttonStyle(PressableStyle(scale: 0.86))
+    }
+}
+
+/// Liquid with a gentle wave on top; the wave flattens out when empty or full.
+private struct LiquidShape: Shape {
+    var level: Double
+    var phase: Double
+    var amplitude: CGFloat
+
+    var animatableData: AnimatablePair<Double, Double> {
+        get { AnimatablePair(level, phase) }
+        set {
+            level = newValue.first
+            phase = newValue.second
+        }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let clamped = min(1, max(0, level))
+        let surface = rect.maxY - rect.height * clamped
+        let amp = amplitude * min(1, min(clamped, 1 - clamped) * 8)
+        let steps = 28
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        for step in 0...steps {
+            let progress = Double(step) / Double(steps)
+            let x = rect.minX + rect.width * progress
+            let y = surface + sin(progress * 2 * .pi * 1.3 + phase) * amp
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.closeSubpath()
+        return path
     }
 }

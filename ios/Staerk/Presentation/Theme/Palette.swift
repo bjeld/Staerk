@@ -21,12 +21,12 @@ enum Palette {
 
     // MARK: Accent
 
-    /// Signature volt. Use as a fill — never as text on light backgrounds.
-    static let accent = Color(hex: 0xC6FF00)
-    static let onAccent = Color(hex: 0x0B0B0C)
+    /// Signature cobalt. Used for fills: rings, primary buttons, completed states.
+    static let accent = Color(light: Color(hex: 0x2563FF), dark: Color(hex: 0x3B7BFF))
+    static let onAccent = Color.white
     /// Accent that stays legible as text, icons and system tint in both appearances.
-    static let accentInk = Color(light: Color(hex: 0x4A7800), dark: Color(hex: 0xC6FF00))
-    static let accentSoft = Color(light: Color(hex: 0x8DC300, alpha: 0.14), dark: Color(hex: 0xC6FF00, alpha: 0.10))
+    static let accentInk = Color(light: Color(hex: 0x1E54E6), dark: Color(hex: 0x76A6FF))
+    static let accentSoft = Color(light: Color(hex: 0x2563FF, alpha: 0.10), dark: Color(hex: 0x3B7BFF, alpha: 0.18))
 
     // MARK: Data
 
@@ -66,7 +66,7 @@ extension Color {
             self.init(hex: value)
             return
         }
-        self.init(hex: 0xC6FF00)
+        self.init(hex: 0x2563FF)
     }
 
     init(light: Color, dark: Color) {

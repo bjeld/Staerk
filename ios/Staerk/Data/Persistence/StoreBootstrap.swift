@@ -13,10 +13,23 @@ enum StoreBootstrap {
         do {
             let container = try ModelContainer(for: schema, configurations: [configuration])
             migrateIfNeeded(into: container.mainContext)
+            retireVoltTints(in: container.mainContext)
             return container
         } catch {
             fatalError("SwiftData could not open: \(error)")
         }
+    }
+
+    /// The volt accent was retired; habits saved with it take their template's current tint.
+    private static func retireVoltTints(in context: ModelContext) {
+        let rows = (try? context.fetch(FetchDescriptor<HabitRecord>())) ?? []
+        let stale = rows.filter { $0.tintHex.uppercased() == "C6FF00" }
+        guard !stale.isEmpty else { return }
+        for row in stale {
+            let template = HabitCatalog.all.first { $0.id == row.templateID }
+            row.tintHex = template?.tintHex ?? "2563FF"
+        }
+        try? context.save()
     }
 
     private static func legacyStoreExists() -> Bool {

@@ -69,11 +69,12 @@ extension Color {
     /// Black or white, whichever reads best on top of this colour.
     var onTint: Color {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a) else { return Palette.onAccent }
+        let dark = Color(hex: 0x0B0B0C)
+        guard UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a) else { return dark }
         func linear(_ c: CGFloat) -> CGFloat {
             c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
         }
         let luminance = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)
-        return luminance > 0.36 ? Palette.onAccent : .white
+        return luminance > 0.36 ? dark : .white
     }
 }

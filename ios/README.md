@@ -94,7 +94,7 @@ Scroll views bruger `scrollDismissesKeyboard`. Tryk udenfor og en **Færdig**-kn
 
 ## Ikon og navn
 
-Hjemmeskærmsnavn: **Styrke**. Accent: volt/neon.
+Hjemmeskærmsnavn: **Styrke**. Accent: cobalt blue.
 
 ## Hvis noget fejler
 
