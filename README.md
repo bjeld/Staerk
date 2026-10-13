@@ -42,25 +42,22 @@ Notifikationer (kreatin kl. 06:15 som standard) kræver tilladelse. På iPhone: 
 
 ## GitHub Pages
 
-Live-host er **GitHub Pages** på kontoen **[bjeld](https://github.com/bjeld)** (ikke Cloudflare). Workflowen `.github/workflows/pages.yml` bygger med base path `/health-app/` og publicerer `dist/`.
+Live-host er **GitHub Pages** på **[bjeld/Staerk](https://github.com/bjeld/Staerk)** (ikke Cloudflare). Workflowen `.github/workflows/pages.yml` bygger med base path `/Staerk/` og publicerer `dist/`.
 
-Offentlig URL, når `bjeld/health-app` er oprettet og Action’en har kørt:
+**https://bjeld.github.io/Staerk/**
 
-**https://bjeld.github.io/health-app/**
-
-1. Opret det **offentlige** repo [github.com/bjeld/health-app](https://github.com/bjeld/health-app).
-2. Push `main` til det repo.
-3. Repo → Settings → Pages → **Source: GitHub Actions** (første workflow-kørsel slår det ofte til selv).
-4. Vent på workflowen **Deploy GitHub Pages**.
+1. Push `main` til [github.com/bjeld/Staerk](https://github.com/bjeld/Staerk).
+2. Repo → Settings → Pages → **Source: GitHub Actions**.
+3. Vent på workflowen **Deploy GitHub Pages**.
 
 Lokalt tjek af samme subpath:
 
 ```bash
-VITE_BASE=/health-app/ npm run build
+VITE_BASE=/Staerk/ npm run build
 npm run preview
 ```
 
-Åbn derefter [http://127.0.0.1:47321/health-app/](http://127.0.0.1:47321/health-app/).
+Åbn derefter [http://127.0.0.1:47321/Staerk/](http://127.0.0.1:47321/Staerk/).
 
 `dist/404.html` er en kopi af `index.html`, så deep links virker. `public/.nojekyll` forhindrer Jekyll i at skjule filer.
 

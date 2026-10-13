@@ -1,4 +1,4 @@
-# Publishes to https://bjeld.github.io/health-app/
+# Publishes to https://bjeld.github.io/Staerk/
 name: Deploy GitHub Pages
 
 on:
@@ -33,7 +33,7 @@ jobs:
 
       - name: Build
         env:
-          VITE_BASE: /health-app/
+          VITE_BASE: /Staerk/
         run: npm run build
 
       - name: Upload Pages artifact
