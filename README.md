@@ -42,13 +42,13 @@ Notifikationer (kreatin kl. 06:15 som standard) kræver tilladelse. På iPhone: 
 
 ## GitHub Pages
 
-Live-host er **GitHub Pages** (ikke Cloudflare). Workflowen `.github/workflows/pages.yml` bygger med base path `/health-app/` og publicerer `dist/`.
+Live-host er **GitHub Pages** på kontoen **[bjeld](https://github.com/bjeld)** (ikke Cloudflare). Workflowen `.github/workflows/pages.yml` bygger med base path `/health-app/` og publicerer `dist/`.
 
-Forventet URL, når repoet hedder `health-app` under dit GitHub-brugernavn:
+Offentlig URL, når `bjeld/health-app` er oprettet og Action’en har kørt:
 
-`https://<dit-github-brugernavn>.github.io/health-app/`
+**https://bjeld.github.io/health-app/**
 
-1. Opret et **offentligt** GitHub-repo ved navn `health-app`.
+1. Opret det **offentlige** repo [github.com/bjeld/health-app](https://github.com/bjeld/health-app).
 2. Push `main` til det repo.
 3. Repo → Settings → Pages → **Source: GitHub Actions** (første workflow-kørsel slår det ofte til selv).
 4. Vent på workflowen **Deploy GitHub Pages**.
