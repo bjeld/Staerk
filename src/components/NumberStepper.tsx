@@ -23,7 +23,8 @@ export function NumberStepper({ value, onChange, step = 1, min = 0, label, suffi
         <input
           type="number"
           inputMode="decimal"
-          className="h-11 w-full min-w-0 bg-transparent text-center text-[22px] font-semibold tabular-nums outline-none"
+          className="h-11 w-full min-w-0 bg-transparent text-center font-semibold tabular-nums outline-none"
+          style={{ fontSize: 22 }}
           value={Number.isFinite(value) ? value : 0}
           onChange={(e) => onChange(Math.max(min, Number(e.target.value) || 0))}
         />

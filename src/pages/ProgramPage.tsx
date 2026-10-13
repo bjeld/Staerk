@@ -279,6 +279,7 @@ function Editor({
             color: var(--fg);
             padding: 0 0.9rem;
             outline: none;
+            font-size: 16px;
           }
         `}</style>
       </form>

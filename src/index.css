@@ -58,6 +58,12 @@ html,
 body,
 #root {
   min-height: 100dvh;
+  touch-action: manipulation;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -75,6 +81,19 @@ body {
 }
 
 button,
+a,
+input,
+select,
+textarea,
+label,
+summary,
+[role='button'],
+[role='switch'] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
 input,
 select,
 textarea {
@@ -82,9 +101,10 @@ textarea {
   color: inherit;
 }
 
-button {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='hidden']),
+select,
+textarea {
+  font-size: 16px;
 }
 
 .safe-bottom {
@@ -92,6 +112,7 @@ button {
 }
 
 .press {
+  touch-action: manipulation;
   transition:
     transform 160ms var(--spring),
     opacity 160ms var(--spring),
@@ -148,6 +169,7 @@ button {
   outline: none;
   text-align: right;
   color: var(--muted);
+  font-size: 16px;
 }
 
 .ios-input:focus {

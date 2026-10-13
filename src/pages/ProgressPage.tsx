@@ -272,7 +272,7 @@ function PhotoPick({
   return (
     <div>
       <select
-        className="mb-2 h-11 w-full rounded-xl border px-2 text-sm"
+        className="mb-2 h-11 w-full rounded-xl border px-2 text-base"
         style={{ background: 'var(--bg)', borderColor: 'var(--hairline)', color: 'var(--fg)' }}
         value={value}
         onChange={(e) => onChange(e.target.value)}
