@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { MUSCLE_LABELS, type WorkoutLetter } from '../db/types'
@@ -40,11 +41,13 @@ export function TrainingPage() {
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <PrimaryButton to="/traening/session">{todayDone ? 'Nyt pas' : 'Start pas'}</PrimaryButton>
-          <Row to="/traening/program" className="justify-center rounded-[12px] !px-0" >
-            <span className="w-full text-center text-[17px] font-semibold" style={{ color: 'var(--blue)' }}>
-              Rediger
-            </span>
-          </Row>
+          <Link
+            to="/traening/program"
+            className="press flex h-12 items-center justify-center rounded-[12px] text-[17px] font-semibold"
+            style={{ background: 'var(--fill)', color: 'var(--fg)' }}
+          >
+            Rediger
+          </Link>
         </div>
       </Group>
 

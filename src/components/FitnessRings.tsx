@@ -21,18 +21,20 @@ function RingArc({
   return (
     <>
       <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--ring-track)" strokeWidth={stroke} />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke={color}
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        strokeDasharray={`${dash} ${c - dash}`}
-        className="transition-[stroke-dasharray] duration-700"
-        style={{ filter: `drop-shadow(0 0 6px ${color})` }}
-      />
+      {pct > 0.02 ? (
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${c - dash}`}
+          className="transition-[stroke-dasharray] duration-700"
+          style={{ filter: `drop-shadow(0 0 5px ${color})` }}
+        />
+      ) : null}
     </>
   )
 }
@@ -87,17 +89,19 @@ export function ProgressRing({
     <div className="relative inline-grid place-items-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--ring-track)" strokeWidth={stroke} />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={`${dash} ${c - dash}`}
-          className="transition-[stroke-dasharray] duration-500"
-        />
+        {pct > 0.02 ? (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${dash} ${c - dash}`}
+            className="transition-[stroke-dasharray] duration-500"
+          />
+        ) : null}
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">
         <div>
