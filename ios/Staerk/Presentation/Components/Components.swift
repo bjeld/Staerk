@@ -20,22 +20,7 @@ struct Screen<Content: View>: View {
         .modifier(ScrollKeyboardDismiss(mode: keyboardDismiss))
         .scrollIndicators(.hidden)
         .background(Palette.canvas.ignoresSafeArea())
-        .overlay(alignment: .top) { StatusBarScrim() }
-    }
-}
-
-/// Keeps scrolled content from colliding with the status bar on screens without a navigation bar.
-private struct StatusBarScrim: View {
-    var body: some View {
-        VStack(spacing: 0) {
-            Palette.canvas
-                .frame(height: 0)
-                .ignoresSafeArea(edges: .top)
-            LinearGradient(colors: [Palette.canvas, Palette.canvas.opacity(0)], startPoint: .top, endPoint: .bottom)
-                .frame(height: 14)
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+        .scrollEdgeEffectStyle(.soft, for: .top)
     }
 }
 
