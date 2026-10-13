@@ -16,6 +16,7 @@ import { MUSCLE_GROUPS, MUSCLE_LABELS, WEEKDAY_SHORT, type DayLog } from '../db/
 import { monthGrid, todayKey, weekKeys } from '../lib/dates'
 import { weeklySetVolume } from '../lib/progression'
 import { ProgressRing } from '../components/ProgressRing'
+import { Group, PageHeader } from '../components/ui'
 
 export function HabitsPage() {
   const settings = useLiveQuery(() => db.settings.get('settings'))
@@ -60,25 +61,19 @@ export function HabitsPage() {
   }))
 
   return (
-    <div className="space-y-5 pb-2">
-      <header className="pt-2">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Rækker</p>
-        <h1 className="font-display text-4xl font-extrabold leading-none">Vaner</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          En uge ad gangen. Konsistens slår hero-pas — især når man sidder ned hele dagen.
-        </p>
-      </header>
+    <div className="space-y-6 pb-2">
+      <PageHeader title="Vaner" subtitle="En uge ad gangen. Konsistens slår hero-pas." />
 
-      <section className="grid grid-cols-2 gap-2">
-        <StatRing title="Kreatin" value={creatineStreak} unit="dage" />
-        <StatRing title="Vandmål" value={waterStreak} unit="dage" />
-        <StatRing title="Alkoholfri" value={soberStreak} unit="dage" />
-        <StatRing title="Gym-række" value={gymStreak} unit="pas" />
+      <section className="grid grid-cols-2 gap-3">
+        <StatRing title="Kreatin" value={creatineStreak} unit="dage" color="var(--ring-move)" />
+        <StatRing title="Vandmål" value={waterStreak} unit="dage" color="var(--ring-exercise)" />
+        <StatRing title="Alkoholfri" value={soberStreak} unit="dage" color="var(--ring-stand)" />
+        <StatRing title="Gym-række" value={gymStreak} unit="pas" color="var(--orange)" />
       </section>
 
-      <section className="rounded-3xl border p-4" style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}>
+      <Group className="p-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-xl font-bold">Denne uge</h2>
+          <h2 className="text-[20px] font-semibold">Denne uge</h2>
           <span className="text-sm text-[var(--muted)]">{weekScore}/21 vaner</span>
         </div>
         <div className="mt-3 overflow-x-auto">
@@ -96,7 +91,7 @@ export function HabitsPage() {
               {week.map((key, i) => {
                 const d = byDate[key]
                 return (
-                  <tr key={key} className="border-t" style={{ borderColor: 'var(--line)' }}>
+                  <tr key={key} className="border-t" style={{ borderColor: 'var(--hairline)' }}>
                     <td className="py-2.5 font-semibold capitalize">
                       {WEEKDAY_SHORT[i]} {key === today ? '· i dag' : ''}
                     </td>
@@ -111,23 +106,23 @@ export function HabitsPage() {
           </table>
         </div>
         <p className="mt-2 text-xs text-[var(--muted)]">K = kreatin · V = vandmål · A = alkoholfri · T = træning</p>
-      </section>
+      </Group>
 
-      <section className="rounded-3xl border p-4" style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}>
-        <h2 className="font-display text-xl font-bold">Ugens sæt pr. muskel</h2>
+      <Group className="p-4">
+        <h2 className="text-[20px] font-semibold">Ugens sæt pr. muskel</h2>
         {volumeData.every((d) => d.sæt === 0) ? (
           <p className="mt-2 text-sm text-[var(--muted)]">Ingen sæt denne uge endnu.</p>
         ) : (
           <div className="mt-2 h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={volumeData}>
-                <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" />
+                <CartesianGrid stroke="var(--hairline)" strokeDasharray="3 3" />
                 <XAxis dataKey="name" tick={{ fill: 'var(--muted)', fontSize: 11 }} />
                 <YAxis allowDecimals={false} tick={{ fill: 'var(--muted)', fontSize: 11 }} width={28} />
                 <Tooltip
                   contentStyle={{
-                    background: 'var(--surface)',
-                    border: '1px solid var(--line)',
+                    background: 'var(--bg-elevated)',
+                    border: '0.5px solid var(--hairline)',
                     borderRadius: 12,
                   }}
                 />
@@ -136,17 +131,17 @@ export function HabitsPage() {
             </ResponsiveContainer>
           </div>
         )}
-      </section>
+      </Group>
 
-      <section className="rounded-3xl border p-4" style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}>
+      <Group className="p-4">
         <div className="mb-3 flex items-center justify-between">
-          <button type="button" className="h-11 px-3 font-bold" onClick={() => setCursor((c) => addMonths(c, -1))}>
+          <button type="button" className="press h-11 px-3 text-[22px]" onClick={() => setCursor((c) => addMonths(c, -1))}>
             ‹
           </button>
-          <h2 className="font-display text-xl font-bold capitalize">
+          <h2 className="text-[20px] font-semibold capitalize">
             {format(cursor, 'MMMM yyyy', { locale: da })}
           </h2>
-          <button type="button" className="h-11 px-3 font-bold" onClick={() => setCursor((c) => addMonths(c, 1))}>
+          <button type="button" className="press h-11 px-3 text-[22px]" onClick={() => setCursor((c) => addMonths(c, 1))}>
             ›
           </button>
         </div>
@@ -170,7 +165,7 @@ export function HabitsPage() {
                 key={key}
                 className="grid aspect-square place-items-center rounded-xl text-xs font-bold"
                 style={{
-                  background: score === 0 ? 'var(--bg)' : `color-mix(in oklab, var(--accent) ${18 + score * 16}%, var(--bg))`,
+                  background: score === 0 ? 'var(--fill)' : `color-mix(in oklab, var(--accent) ${18 + score * 16}%, var(--bg))`,
                   outline: isToday ? '2px solid var(--accent)' : undefined,
                 }}
                 title={`${key}: ${score}/4`}
@@ -180,17 +175,27 @@ export function HabitsPage() {
             )
           })}
         </div>
-      </section>
+      </Group>
     </div>
   )
 }
 
-function StatRing({ title, value, unit }: { title: string; value: number; unit: string }) {
+function StatRing({
+  title,
+  value,
+  unit,
+  color,
+}: {
+  title: string
+  value: number
+  unit: string
+  color: string
+}) {
   return (
-    <div className="rounded-3xl border p-3 text-center" style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}>
-      <ProgressRing value={Math.min(value, 14)} max={14} size={92} stroke={8} label={`${value}`} sub={unit} />
-      <div className="mt-1 text-sm font-semibold">{title}</div>
-    </div>
+    <Group className="p-3 text-center">
+      <ProgressRing value={Math.min(value, 14)} max={14} size={88} stroke={8} color={color} label={`${value}`} sub={unit} />
+      <div className="mt-1 text-[13px] font-medium">{title}</div>
+    </Group>
   )
 }
 

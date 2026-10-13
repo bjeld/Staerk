@@ -14,6 +14,7 @@ import { uid } from '../lib/ids'
 import { formatDayShort, todayKey } from '../lib/dates'
 import { compressImage } from '../lib/image'
 import type { ProgressPhoto } from '../db/types'
+import { Group, PageHeader, PrimaryButton } from '../components/ui'
 
 export function ProgressPage() {
   const settings = useLiveQuery(() => db.settings.get('settings'))
@@ -76,14 +77,8 @@ export function ProgressPage() {
   }
 
   return (
-    <div className="space-y-5 pb-2">
-      <header className="pt-2">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Krop</p>
-        <h1 className="font-display text-4xl font-extrabold leading-none">Fremskridt</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Vægt, talje og fotos bor kun på denne enhed. Tag billedet under samme lys, hvis du kan.
-        </p>
-      </header>
+    <div className="space-y-6 pb-2">
+      <PageHeader title="Fremskridt" subtitle="Vægt, talje og fotos bor kun på denne enhed." />
 
       <section className="grid grid-cols-2 gap-2">
         <MetricCard
@@ -98,8 +93,8 @@ export function ProgressPage() {
         />
       </section>
 
-      <section className="space-y-3 rounded-3xl border p-4" style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}>
-        <h2 className="font-display text-xl font-bold">Log mål</h2>
+      <Group className="space-y-3 p-4">
+        <h2 className="text-[20px] font-semibold">Log mål</h2>
         <label className="block text-sm font-semibold text-[var(--muted)]">
           Dato
           <input
@@ -107,7 +102,7 @@ export function ProgressPage() {
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="mt-1 h-12 w-full rounded-2xl border px-3"
-            style={{ background: 'var(--bg)', borderColor: 'var(--line)', color: 'var(--fg)' }}
+            style={{ background: 'var(--bg)', borderColor: 'var(--hairline)', color: 'var(--fg)' }}
           />
         </label>
         <div className="grid grid-cols-2 gap-2">
@@ -120,7 +115,7 @@ export function ProgressPage() {
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               className="mt-1 h-12 w-full rounded-2xl border px-3"
-              style={{ background: 'var(--bg)', borderColor: 'var(--line)', color: 'var(--fg)' }}
+              style={{ background: 'var(--bg)', borderColor: 'var(--hairline)', color: 'var(--fg)' }}
             />
           </label>
           <label className="block text-sm font-semibold text-[var(--muted)]">
@@ -132,19 +127,12 @@ export function ProgressPage() {
               value={waist}
               onChange={(e) => setWaist(e.target.value)}
               className="mt-1 h-12 w-full rounded-2xl border px-3"
-              style={{ background: 'var(--bg)', borderColor: 'var(--line)', color: 'var(--fg)' }}
+              style={{ background: 'var(--bg)', borderColor: 'var(--hairline)', color: 'var(--fg)' }}
             />
           </label>
         </div>
-        <button
-          type="button"
-          onClick={() => void saveMeasurement()}
-          className="h-12 w-full rounded-2xl font-bold"
-          style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}
-        >
-          Gem måling
-        </button>
-      </section>
+        <PrimaryButton onClick={() => void saveMeasurement()}>Gem måling</PrimaryButton>
+      </Group>
 
       <ChartCard title="Vægt" empty={weightData.length === 0} emptyText="Log din første vægt, så kommer kurven.">
         <LinePlot data={weightData} dataKey="kg" />
@@ -153,10 +141,10 @@ export function ProgressPage() {
         <LinePlot data={waistData} dataKey="cm" />
       </ChartCard>
 
-      <section className="space-y-3 rounded-3xl border p-4" style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}>
-        <h2 className="font-display text-xl font-bold">Fremskridtsfotos</h2>
+      <Group className="space-y-3 p-4">
+        <h2 className="text-[20px] font-semibold">Fremskridtsfotos</h2>
         <label
-          className="flex h-14 cursor-pointer items-center justify-center rounded-2xl font-bold"
+          className="press flex h-12 cursor-pointer items-center justify-center rounded-[12px] font-semibold"
           style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}
         >
           {busy ? 'Komprimerer…' : 'Tilføj foto'}
@@ -172,7 +160,7 @@ export function ProgressPage() {
 
         {photos.length >= 2 ? (
           <div>
-            <h3 className="mb-2 font-display text-lg font-bold">Før / efter</h3>
+            <h3 className="mb-2 text-[17px] font-semibold">Før / efter</h3>
             <div className="grid grid-cols-2 gap-2">
               <PhotoPick
                 label="Før"
@@ -218,18 +206,18 @@ export function ProgressPage() {
             </figure>
           ))}
         </div>
-      </section>
+      </Group>
     </div>
   )
 }
 
 function MetricCard({ label, value, goal }: { label: string; value: string; goal: string }) {
   return (
-    <div className="rounded-3xl border p-4" style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}>
-      <div className="text-sm text-[var(--muted)]">{label}</div>
-      <div className="font-display text-2xl font-extrabold">{value}</div>
-      <div className="text-xs text-[var(--muted)]">{goal}</div>
-    </div>
+    <Group className="p-4">
+      <div className="text-[13px] text-[var(--muted)]">{label}</div>
+      <div className="text-[28px] font-bold tracking-tight">{value}</div>
+      <div className="text-[12px] text-[var(--muted)]">{goal}</div>
+    </Group>
   )
 }
 
@@ -245,10 +233,10 @@ function ChartCard({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-3xl border p-4" style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}>
-      <h2 className="font-display text-xl font-bold">{title}</h2>
-      {empty ? <p className="mt-2 text-sm text-[var(--muted)]">{emptyText}</p> : <div className="mt-2 h-52">{children}</div>}
-    </section>
+    <Group className="p-4">
+      <h2 className="text-[20px] font-semibold">{title}</h2>
+      {empty ? <p className="mt-2 text-[15px] text-[var(--muted)]">{emptyText}</p> : <div className="mt-2 h-52">{children}</div>}
+    </Group>
   )
 }
 
@@ -256,11 +244,11 @@ function LinePlot({ data, dataKey }: { data: object[]; dataKey: string }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data}>
-        <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" />
+        <CartesianGrid stroke="var(--hairline)" strokeDasharray="3 3" />
         <XAxis dataKey="date" tick={{ fill: 'var(--muted)', fontSize: 11 }} />
         <YAxis tick={{ fill: 'var(--muted)', fontSize: 11 }} width={36} domain={['auto', 'auto']} />
         <Tooltip
-          contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12 }}
+          contentStyle={{ background: 'var(--bg-elevated)', border: '0.5px solid var(--hairline)', borderRadius: 12 }}
         />
         <Line type="monotone" dataKey={dataKey} stroke="var(--accent)" strokeWidth={3} dot={{ r: 3 }} />
       </LineChart>
@@ -285,7 +273,7 @@ function PhotoPick({
     <div>
       <select
         className="mb-2 h-11 w-full rounded-xl border px-2 text-sm"
-        style={{ background: 'var(--bg)', borderColor: 'var(--line)', color: 'var(--fg)' }}
+        style={{ background: 'var(--bg)', borderColor: 'var(--hairline)', color: 'var(--fg)' }}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >

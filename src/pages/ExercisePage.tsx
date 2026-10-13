@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
@@ -14,6 +14,7 @@ import { db } from '../db/db'
 import { MUSCLE_LABELS } from '../db/types'
 import { formatDayShort } from '../lib/dates'
 import { lastForExercise } from '../lib/progression'
+import { Group, PageHeader } from '../components/ui'
 
 export function ExercisePage() {
   const { exerciseId } = useParams()
@@ -48,32 +49,29 @@ export function ExercisePage() {
   const isHold = exercise.logType === 'seconds'
 
   return (
-    <div className="space-y-4 pb-2">
-      <header className="pt-2">
-        <Link to="/traening" className="text-sm font-semibold text-[var(--muted)]">
-          ← Træning
-        </Link>
-        <h1 className="mt-2 font-display text-4xl font-extrabold leading-none">{exercise.name}</h1>
-        <p className="mt-1 text-[var(--muted)]">
-          {MUSCLE_LABELS[exercise.muscleGroup]} · Program {exercise.workout}
-        </p>
-      </header>
+    <div className="space-y-5 pb-2">
+      <PageHeader
+        title={exercise.name}
+        subtitle={`${MUSCLE_LABELS[exercise.muscleGroup]} · Program ${exercise.workout}`}
+        backTo="/traening"
+        backLabel="Træning"
+      />
 
-      <section className="rounded-3xl border p-4" style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}>
-        <h2 className="font-display text-lg font-bold">{isHold ? 'Bedste tid' : 'Topvægt'}</h2>
+      <Group className="p-4">
+        <h2 className="text-[20px] font-semibold">{isHold ? 'Bedste tid' : 'Topvægt'}</h2>
         {points.length === 0 ? (
           <p className="mt-2 text-sm text-[var(--muted)]">Ingen data endnu. Log et pas, så kommer grafen.</p>
         ) : (
           <div className="mt-2 h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={points}>
-                <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" />
+                <CartesianGrid stroke="var(--hairline)" strokeDasharray="3 3" />
                 <XAxis dataKey="date" tick={{ fill: 'var(--muted)', fontSize: 11 }} />
                 <YAxis tick={{ fill: 'var(--muted)', fontSize: 11 }} width={36} />
                 <Tooltip
                   contentStyle={{
-                    background: 'var(--surface)',
-                    border: '1px solid var(--line)',
+                    background: 'var(--bg-elevated)',
+                    border: '0.5px solid var(--hairline)',
                     borderRadius: 12,
                     color: 'var(--fg)',
                   }}
@@ -94,38 +92,31 @@ export function ExercisePage() {
             Seneste: {last.sets.map((s) => (isHold ? `${s.reps}s` : `${s.weight} kg × ${s.reps}`)).join(' · ')}
           </p>
         ) : null}
-      </section>
+      </Group>
 
-      <section className="space-y-2">
-        <h2 className="font-display text-xl font-bold">Pas</h2>
+      <Group>
         {points.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">Ingen historik.</p>
+          <p className="px-4 py-6 text-[15px] text-[var(--muted)]">Ingen historik.</p>
         ) : (
-          <ul className="space-y-2">
-            {[...sessions]
-              .reverse()
-              .filter((s) => s.exercises.some((e) => e.exerciseId === exercise.id && e.sets.some((x) => x.done)))
-              .map((s) => {
-                const block = s.exercises.find((e) => e.exerciseId === exercise.id)
-                return (
-                  <li
-                    key={s.id}
-                    className="rounded-2xl border px-4 py-3"
-                    style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
-                  >
-                    <div className="font-display font-bold">{formatDayShort(s.date)}</div>
-                    <div className="text-sm text-[var(--muted)]">
-                      {block?.sets
-                        .filter((x) => x.done)
-                        .map((x) => (isHold ? `${x.reps}s` : `${x.weight}×${x.reps}`))
-                        .join(' · ')}
-                    </div>
-                  </li>
-                )
-              })}
-          </ul>
+          [...sessions]
+            .reverse()
+            .filter((s) => s.exercises.some((e) => e.exerciseId === exercise.id && e.sets.some((x) => x.done)))
+            .map((s) => {
+              const block = s.exercises.find((e) => e.exerciseId === exercise.id)
+              return (
+                <div key={s.id} className="row px-4 py-3">
+                  <div className="text-[17px]">{formatDayShort(s.date)}</div>
+                  <div className="text-[13px] text-[var(--muted)]">
+                    {block?.sets
+                      .filter((x) => x.done)
+                      .map((x) => (isHold ? `${x.reps}s` : `${x.weight}×${x.reps}`))
+                      .join(' · ')}
+                  </div>
+                </div>
+              )
+            })
         )}
-      </section>
+      </Group>
     </div>
   )
 }

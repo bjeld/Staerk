@@ -1,18 +1,12 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { AppSettings, ThemeMode } from '../db/types'
-import { THEMES } from '../db/types'
 import { applyTheme } from '../lib/theme'
 import { downloadText, exportBackup, importBackup } from '../db/backup'
 import { ensureNotificationPermission, notificationsSupported } from '../lib/notifications'
 import { todayKey } from '../lib/dates'
-
-const themeLabels: Record<ThemeMode, string> = {
-  light: 'Lys',
-  dark: 'Mørk',
-  system: 'System',
-}
+import { Group, IosToggle, PageHeader, PrimaryButton, Row, SectionLabel, Segmented } from '../components/ui'
 
 export function SettingsPage() {
   const settings = useLiveQuery(() => db.settings.get('settings'))
@@ -62,232 +56,158 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="space-y-5 pb-2">
-      <header className="pt-2">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Konto</p>
-        <h1 className="font-display text-4xl font-extrabold leading-none">Indstillinger</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Alt ligger lokalt i browseren. Ingen konto, ingen sky — kun din backup-fil.
+    <div className="space-y-6 pb-2">
+      <PageHeader title="Indstillinger" subtitle="Alt ligger lokalt. Ingen konto, ingen sky." />
+
+      <div>
+        <SectionLabel>Profil</SectionLabel>
+        <Group>
+          <Row>
+            <span className="text-[17px]">Navn</span>
+            <input
+              className="ios-input"
+              value={settings.displayName}
+              onChange={(e) => void patch({ displayName: e.target.value })}
+            />
+          </Row>
+        </Group>
+      </div>
+
+      <div>
+        <SectionLabel>Mål</SectionLabel>
+        <Group>
+          <Row>
+            <span className="flex-1 text-[17px]">Glas vand</span>
+            <input
+              type="number"
+              min={1}
+              max={20}
+              className="ios-input max-w-20"
+              value={settings.waterGoal}
+              onChange={(e) => void patch({ waterGoal: Math.max(1, Number(e.target.value) || 8) })}
+            />
+          </Row>
+          <Row>
+            <span className="flex-1 text-[17px]">Vægtmål</span>
+            <input
+              type="number"
+              step="0.1"
+              className="ios-input max-w-24"
+              placeholder="kg"
+              value={settings.weightGoalKg ?? ''}
+              onChange={(e) =>
+                void patch({ weightGoalKg: e.target.value === '' ? undefined : Number(e.target.value) })
+              }
+            />
+          </Row>
+          <Row>
+            <span className="flex-1 text-[17px]">Taljemål</span>
+            <input
+              type="number"
+              step="0.5"
+              className="ios-input max-w-24"
+              placeholder="cm"
+              value={settings.waistGoalCm ?? ''}
+              onChange={(e) =>
+                void patch({ waistGoalCm: e.target.value === '' ? undefined : Number(e.target.value) })
+              }
+            />
+          </Row>
+        </Group>
+      </div>
+
+      <div>
+        <SectionLabel>Udseende</SectionLabel>
+        <Group className="p-3">
+          <Segmented<ThemeMode>
+            value={settings.theme}
+            onChange={(theme) => void patch({ theme })}
+            options={[
+              { value: 'light', label: 'Lys' },
+              { value: 'dark', label: 'Mørk' },
+              { value: 'system', label: 'System' },
+            ]}
+          />
+        </Group>
+      </div>
+
+      <div>
+        <SectionLabel>Påmindelser</SectionLabel>
+        <Group>
+          <Row>
+            <span className="flex-1 text-[17px]">Tidspunkt</span>
+            <input
+              type="time"
+              className="ios-input max-w-28"
+              value={settings.reminderTime}
+              onChange={(e) => void patch({ reminderTime: e.target.value })}
+            />
+          </Row>
+          <Row>
+            <span className="flex-1 text-[17px]">Kreatin</span>
+            <IosToggle
+              checked={settings.creatineReminder}
+              onChange={(creatineReminder) => void patch({ creatineReminder })}
+              label="Kreatin-påmindelse"
+            />
+          </Row>
+          <Row>
+            <span className="min-w-0 flex-1 text-[17px]">Træning man/ons/fre</span>
+            <IosToggle
+              checked={settings.workoutReminder}
+              onChange={(workoutReminder) => void patch({ workoutReminder })}
+              label="Træningspåmindelse"
+            />
+          </Row>
+        </Group>
+        <p className="mt-2 px-4 text-[13px] text-[var(--muted)]">
+          Browser-notifikationer virker bedst, når appen er åben eller på hjemmeskærmen. iPhone: iOS 16.4+.
+          Status: {perm}.
         </p>
-      </header>
-
-      <Card title="Profil">
-        <Field label="Navn">
-          <input
-            className="field"
-            value={settings.displayName}
-            onChange={(e) => void patch({ displayName: e.target.value })}
-          />
-        </Field>
-      </Card>
-
-      <Card title="Mål">
-        <Field label="Glas vand om dagen">
-          <input
-            type="number"
-            min={1}
-            max={20}
-            className="field"
-            value={settings.waterGoal}
-            onChange={(e) => void patch({ waterGoal: Math.max(1, Number(e.target.value) || 8) })}
-          />
-        </Field>
-        <Field label="Vægtmål (kg)">
-          <input
-            type="number"
-            step="0.1"
-            className="field"
-            value={settings.weightGoalKg ?? ''}
-            placeholder="valgfrit"
-            onChange={(e) =>
-              void patch({
-                weightGoalKg: e.target.value === '' ? undefined : Number(e.target.value),
-              })
-            }
-          />
-        </Field>
-        <Field label="Taljemål (cm)">
-          <input
-            type="number"
-            step="0.5"
-            className="field"
-            value={settings.waistGoalCm ?? ''}
-            placeholder="valgfrit"
-            onChange={(e) =>
-              void patch({
-                waistGoalCm: e.target.value === '' ? undefined : Number(e.target.value),
-              })
-            }
-          />
-        </Field>
-      </Card>
-
-      <Card title="Tema">
-        <div className="grid grid-cols-3 gap-2">
-          {THEMES.map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => void patch({ theme: mode })}
-              className="h-12 rounded-2xl border font-bold"
-              style={{
-                background: settings.theme === mode ? 'var(--accent)' : 'var(--bg)',
-                color: settings.theme === mode ? 'var(--accent-fg)' : 'var(--fg)',
-                borderColor: settings.theme === mode ? 'var(--accent)' : 'var(--line)',
-              }}
-            >
-              {themeLabels[mode]}
-            </button>
-          ))}
+        <div className="mt-3">
+          <PrimaryButton onClick={() => void enableReminders()}>Tillad notifikationer</PrimaryButton>
         </div>
-      </Card>
+      </div>
 
-      <Card title="Påmindelser">
-        <p className="text-sm text-[var(--muted)]">
-          Browser-notifikationer virker bedst, når appen er åben eller installeret på hjemmeskærmen.
-          iPhone kræver iOS 16.4+ og «Føj til hjemmeskærm». Status: {perm}.
-        </p>
-        <Field label="Tidspunkt">
-          <input
-            type="time"
-            className="field"
-            value={settings.reminderTime}
-            onChange={(e) => void patch({ reminderTime: e.target.value })}
-          />
-        </Field>
-        <Toggle
-          label="Kreatin-påmindelse"
-          checked={settings.creatineReminder}
-          onChange={(creatineReminder) => void patch({ creatineReminder })}
+      <div>
+        <SectionLabel>Backup</SectionLabel>
+        <Group>
+          <Row onClick={() => void onExport()}>
+            <span className="flex-1 text-[17px]" style={{ color: 'var(--blue)' }}>
+              Eksporter data
+            </span>
+          </Row>
+          <Row onClick={() => fileRef.current?.click()}>
+            <span className="flex-1 text-[17px]" style={{ color: 'var(--blue)' }}>
+              Importer data
+            </span>
+          </Row>
+        </Group>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json"
+          className="sr-only"
+          onChange={(e) => void onImport(e.target.files?.[0])}
         />
-        <Toggle
-          label="Træningspåmindelse (man/ons/fre)"
-          checked={settings.workoutReminder}
-          onChange={(workoutReminder) => void patch({ workoutReminder })}
-        />
-        <button
-          type="button"
-          onClick={() => void enableReminders()}
-          className="mt-2 h-12 w-full rounded-2xl font-bold"
-          style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}
-        >
-          Tillad notifikationer
-        </button>
-      </Card>
-
-      <Card title="Backup">
-        <p className="text-sm text-[var(--muted)]">
-          Eksporter JSON med vaner, træning, mål og fotos (komprimeret). Import erstatter alt på enheden.
+        <p className="mt-2 px-4 text-[13px] text-[var(--muted)]">
+          JSON med vaner, træning, mål og fotos. Import overskriver alt på enheden.
         </p>
-        <div className="mt-3 grid gap-2">
-          <button
-            type="button"
-            onClick={() => void onExport()}
-            className="h-12 rounded-2xl font-bold"
-            style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}
-          >
-            Eksporter data
-          </button>
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="h-12 rounded-2xl border font-bold"
-            style={{ borderColor: 'var(--line)' }}
-          >
-            Importer data
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json"
-            className="sr-only"
-            onChange={(e) => void onImport(e.target.files?.[0])}
-          />
-        </div>
-      </Card>
+      </div>
 
-      <Card title="Installér på iPhone">
-        <ol className="list-decimal space-y-1 pl-5 text-sm text-[var(--muted)]">
-          <li>Åbn siden i Safari.</li>
-          <li>Tryk på del-ikonet.</li>
-          <li>Vælg «Føj til hjemmeskærm».</li>
-        </ol>
-        <p className="mt-2 text-sm text-[var(--muted)]">
-          På Android: menuen i Chrome → «Tilføj til startskærm». Virker offline, når den er installeret.
-        </p>
-      </Card>
+      <div>
+        <SectionLabel>Installér på iPhone</SectionLabel>
+        <Group className="px-4 py-3 text-[15px] text-[var(--muted)]">
+          <ol className="list-decimal space-y-1 pl-5">
+            <li>Åbn siden i Safari.</li>
+            <li>Tryk på del-ikonet.</li>
+            <li>Vælg «Føj til hjemmeskærm».</li>
+          </ol>
+        </Group>
+      </div>
 
-      {status ? (
-        <p className="rounded-2xl px-4 py-3 text-sm" style={{ background: 'var(--bg-2)' }}>
-          {status}
-        </p>
-      ) : null}
-
-      <p className="pb-2 text-center text-xs text-[var(--muted)]">
-        STÆRK · bygget til Martin · data forlader aldrig din browser
-      </p>
-
-      <style>{`
-        .field {
-          width: 100%;
-          height: 3rem;
-          border-radius: 1rem;
-          border: 1px solid var(--line);
-          background: var(--bg);
-          color: var(--fg);
-          padding: 0 0.9rem;
-          outline: none;
-          margin-top: 0.25rem;
-        }
-      `}</style>
+      {status ? <p className="px-4 text-center text-[13px] text-[var(--muted)]">{status}</p> : null}
+      <p className="pb-2 text-center text-[12px] text-[var(--muted)]">STÆRK · data forlader aldrig din browser</p>
     </div>
-  )
-}
-
-function Card({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="space-y-3 rounded-3xl border p-4" style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}>
-      <h2 className="font-display text-xl font-bold">{title}</h2>
-      {children}
-    </section>
-  )
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="block text-sm font-semibold">
-      {label}
-      {children}
-    </label>
-  )
-}
-
-function Toggle({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string
-  checked: boolean
-  onChange: (v: boolean) => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className="flex h-14 w-full items-center justify-between rounded-2xl px-3 text-left"
-      style={{ background: 'var(--bg)' }}
-    >
-      <span className="font-semibold">{label}</span>
-      <span
-        className="relative h-7 w-12 rounded-full"
-        style={{ background: checked ? 'var(--accent)' : 'var(--line)' }}
-      >
-        <span
-          className="absolute top-0.5 h-6 w-6 rounded-full bg-white transition-[left]"
-          style={{ left: checked ? '1.4rem' : '0.15rem' }}
-        />
-      </span>
-    </button>
   )
 }

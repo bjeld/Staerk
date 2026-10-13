@@ -9,6 +9,7 @@ import { todayKey } from '../lib/dates'
 import { pickWorkoutLetter } from '../lib/schedule'
 import { defaultSetsFromLast, lastForExercise, suggestNext } from '../lib/progression'
 import { NumberStepper } from '../components/NumberStepper'
+import { Group, PageHeader, PlainButton, PrimaryButton, Segmented } from '../components/ui'
 
 export function SessionPage() {
   const navigate = useNavigate()
@@ -76,34 +77,21 @@ export function SessionPage() {
   const totalSets = blocks.reduce((n, b) => n + b.sets.length, 0)
 
   return (
-    <div className="space-y-4 pb-4">
-      <header className="pt-2">
-        <Link to="/traening" className="text-sm font-semibold text-[var(--muted)]">
-          ← Tilbage
-        </Link>
-        <h1 className="mt-2 font-display text-4xl font-extrabold leading-none">Program {resolvedLetter}</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Opvarm 5 min på cykel eller gang + ét let sæt. 1–2 reps i reserve. {doneSets}/{totalSets} sæt
-          markeret.
-        </p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {(['A', 'B'] as const).map((w) => (
-            <button
-              key={w}
-              type="button"
-              onClick={() => switchLetter(w)}
-              className="h-11 rounded-2xl border font-bold"
-              style={{
-                background: resolvedLetter === w ? 'var(--accent)' : 'var(--surface-2)',
-                color: resolvedLetter === w ? 'var(--accent-fg)' : 'var(--fg)',
-                borderColor: resolvedLetter === w ? 'var(--accent)' : 'var(--line)',
-              }}
-            >
-              Program {w}
-            </button>
-          ))}
-        </div>
-      </header>
+    <div className="space-y-5 pb-4">
+      <PageHeader
+        title={`Program ${resolvedLetter}`}
+        subtitle={`Opvarm 5 min + ét let sæt. 1–2 reps i reserve. ${doneSets}/${totalSets} sæt.`}
+        backTo="/traening"
+        backLabel="Træning"
+      />
+      <Segmented
+        value={resolvedLetter}
+        onChange={switchLetter}
+        options={[
+          { value: 'A', label: 'Program A' },
+          { value: 'B', label: 'Program B' },
+        ]}
+      />
 
       {plan.map((exercise) => {
         const block = blocks.find((b) => b.exerciseId === exercise.id)
@@ -119,25 +107,11 @@ export function SessionPage() {
         )
       })}
 
-      <div className="grid gap-2">
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() => void complete(true)}
-          className="h-13 flex h-14 items-center justify-center rounded-2xl text-base font-bold disabled:opacity-60"
-          style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}
-        >
+      <div className="grid gap-1">
+        <PrimaryButton disabled={saving} onClick={() => void complete(true)}>
           Gem og afslut pas
-        </button>
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() => void complete(false)}
-          className="h-12 rounded-2xl border font-semibold"
-          style={{ borderColor: 'var(--line)', background: 'var(--surface-2)' }}
-        >
-          Gem som kladde
-        </button>
+        </PrimaryButton>
+        <PlainButton onClick={() => void complete(false)}>Gem som kladde</PlainButton>
       </div>
     </div>
   )
@@ -155,22 +129,15 @@ function ExerciseCard({
   onChange: (exerciseId: string, index: number, patch: Partial<SessionExercise['sets'][number]>) => void
 }) {
   return (
-    <article
-      className="rounded-3xl border p-4"
-      style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
-    >
+    <Group className="p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-extrabold leading-tight">{exercise.name}</h2>
-          <p className="text-sm text-[var(--muted)]">
+          <h2 className="text-[20px] font-semibold leading-tight">{exercise.name}</h2>
+          <p className="text-[13px] text-[var(--muted)]">
             {MUSCLE_LABELS[exercise.muscleGroup]} · {exercise.defaultSets} sæt
           </p>
         </div>
-        <Link
-          to={`/traening/ovelse/${exercise.id}`}
-          className="text-sm font-semibold"
-          style={{ color: 'var(--accent)' }}
-        >
+        <Link to={`/traening/ovelse/${exercise.id}`} className="text-[15px]" style={{ color: 'var(--blue)' }}>
           Historik
         </Link>
       </div>
@@ -181,26 +148,26 @@ function ExerciseCard({
       ) : (
         <p className="mt-2 text-sm text-[var(--muted)]">Ingen tidligere tal — start konservativt.</p>
       )}
-      <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--accent)' }}>
+      <p className="mt-1 text-[13px] font-medium" style={{ color: 'var(--accent)' }}>
         {suggestNext(exercise, last)}
       </p>
-      {exercise.notes ? <p className="mt-2 text-sm text-[var(--muted)]">{exercise.notes}</p> : null}
+      {exercise.notes ? <p className="mt-2 text-[13px] text-[var(--muted)]">{exercise.notes}</p> : null}
 
       <div className="mt-3 space-y-3">
         {block.sets.map((set, i) => (
-          <div key={i} className="rounded-2xl p-2" style={{ background: 'var(--bg)' }}>
+          <div key={i} className="rounded-[12px] p-2" style={{ background: 'var(--fill)' }}>
             <div className="mb-1 flex items-center justify-between px-1">
-              <span className="text-xs font-bold uppercase tracking-wide text-[var(--muted)]">Sæt {i + 1}</span>
+              <span className="text-[12px] text-[var(--muted)]">Sæt {i + 1}</span>
               <button
                 type="button"
                 onClick={() => onChange(exercise.id, i, { done: !set.done })}
-                className="h-10 rounded-xl px-3 text-sm font-bold"
+                className="press h-8 rounded-full px-3 text-[13px] font-semibold"
                 style={{
-                  background: set.done ? 'var(--accent)' : 'var(--surface-2)',
+                  background: set.done ? 'var(--accent)' : 'var(--bg-elevated)',
                   color: set.done ? 'var(--accent-fg)' : 'var(--fg)',
                 }}
               >
-                {set.done ? 'Sat ✓' : 'Markér'}
+                {set.done ? 'Sat' : 'Markér'}
               </button>
             </div>
             <div className="flex gap-2">
@@ -222,7 +189,7 @@ function ExerciseCard({
           </div>
         ))}
       </div>
-    </article>
+    </Group>
   )
 }
 

@@ -12,7 +12,7 @@ export function applyTheme(mode: ThemeMode): void {
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
   localStorage.setItem('staerk-theme', mode)
 
-  const color = dark ? '#0c0e0a' : '#eef0e8'
+  const color = dark ? '#000000' : '#f2f2f7'
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) meta.setAttribute('content', color)
 }

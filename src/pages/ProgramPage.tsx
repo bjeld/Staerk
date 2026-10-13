@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import {
@@ -13,6 +12,7 @@ import {
 } from '../db/types'
 import { uid } from '../lib/ids'
 import { defaultExercises } from '../db/seed'
+import { PageHeader, SectionLabel } from '../components/ui'
 
 export function ProgramPage() {
   const exercises = useLiveQuery(() => db.exercises.toArray()) ?? []
@@ -38,31 +38,27 @@ export function ProgramPage() {
   }
 
   return (
-    <div className="space-y-4 pb-2">
-      <header className="pt-2">
-        <Link to="/traening" className="text-sm font-semibold text-[var(--muted)]">
-          ← Træning
-        </Link>
-        <h1 className="mt-2 font-display text-4xl font-extrabold leading-none">Øvelser</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Tilpas programmet til det, jobgymmet faktisk har. Gemte ændringer bliver på denne enhed.
-        </p>
-      </header>
+    <div className="space-y-6 pb-2">
+      <PageHeader
+        title="Øvelser"
+        subtitle="Tilpas programmet til det, jobgymmet faktisk har."
+        backTo="/traening"
+        backLabel="Træning"
+      />
 
       {WORKOUT_LETTERS.map((letter) => (
         <section key={letter} className="space-y-2">
-          <h2 className="font-display text-2xl font-extrabold">Program {letter}</h2>
+          <SectionLabel>Program {letter}</SectionLabel>
           {visible
             .filter((e) => e.workout === letter)
             .map((ex) => (
               <article
                 key={ex.id}
-                className="rounded-2xl border p-3"
-                style={{ background: 'var(--surface-2)', borderColor: 'var(--line)' }}
+                className="group mb-2 p-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h3 className="font-display text-lg font-bold">{ex.name}</h3>
+                    <h3 className="text-[17px] font-semibold">{ex.name}</h3>
                     <p className="text-sm text-[var(--muted)]">
                       {MUSCLE_LABELS[ex.muscleGroup]} · {ex.defaultSets} × {ex.defaultRepsMin}–{ex.defaultRepsMax}
                       {ex.logType === 'seconds' ? ' sek' : ''}
@@ -82,7 +78,7 @@ export function ProgramPage() {
                     type="button"
                     onClick={() => setEditing(ex)}
                     className="h-11 flex-1 rounded-xl border font-semibold"
-                    style={{ borderColor: 'var(--line)' }}
+                    style={{ borderColor: 'var(--hairline)' }}
                   >
                     Rediger
                   </button>
@@ -129,7 +125,7 @@ export function ProgramPage() {
           await db.exercises.bulkAdd(defaultExercises)
         }}
         className="h-12 w-full rounded-2xl border font-semibold"
-        style={{ borderColor: 'var(--line)' }}
+        style={{ borderColor: 'var(--hairline)' }}
       >
         Gendan standardprogram
       </button>
@@ -152,7 +148,7 @@ function IconBtn({ children, onClick, label }: { children: string; onClick: () =
       aria-label={label}
       onClick={onClick}
       className="grid h-11 w-11 place-items-center rounded-xl border text-lg"
-      style={{ borderColor: 'var(--line)', background: 'var(--bg)' }}
+      style={{ borderColor: 'var(--hairline)', background: 'var(--fill)' }}
     >
       {children}
     </button>
@@ -174,14 +170,14 @@ function Editor({
     <div className="fixed inset-0 z-30 grid place-items-end bg-black/50 p-3 sm:place-items-center">
       <form
         className="max-h-[92dvh] w-full max-w-lg space-y-3 overflow-y-auto rounded-3xl p-4"
-        style={{ background: 'var(--surface)', color: 'var(--fg)' }}
+        style={{ background: 'var(--bg-elevated)', color: 'var(--fg)' }}
         onSubmit={(e) => {
           e.preventDefault()
           if (!draft.name.trim()) return
           onSave({ ...draft, name: draft.name.trim() })
         }}
       >
-        <h2 className="font-display text-2xl font-extrabold">Rediger øvelse</h2>
+        <h2 className="text-[22px] font-bold tracking-tight">Rediger øvelse</h2>
         <Field label="Navn">
           <input
             required
@@ -266,7 +262,7 @@ function Editor({
           />
         </Field>
         <div className="grid grid-cols-2 gap-2 pt-1">
-          <button type="button" onClick={onCancel} className="h-12 rounded-2xl border font-semibold" style={{ borderColor: 'var(--line)' }}>
+          <button type="button" onClick={onCancel} className="h-12 rounded-2xl border font-semibold" style={{ borderColor: 'var(--hairline)' }}>
             Annuller
           </button>
           <button type="submit" className="h-12 rounded-2xl font-bold" style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}>
@@ -278,7 +274,7 @@ function Editor({
             width: 100%;
             height: 3rem;
             border-radius: 1rem;
-            border: 1px solid var(--line);
+            border: 1px solid var(--hairline);
             background: var(--bg);
             color: var(--fg);
             padding: 0 0.9rem;
