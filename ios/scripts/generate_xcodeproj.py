@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a Xcode 15-compatible .xcodeproj for STÆRK (no XcodeGen required)."""
+"""Generate a Xcode 15-compatible .xcodeproj for Styrke (no XcodeGen required)."""
 
 from __future__ import annotations
 
@@ -357,7 +357,7 @@ def main() -> None:
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = dk.bjeld.staerk;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bjeld.apps.staerk;
 				PRODUCT_NAME = Staerk;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;

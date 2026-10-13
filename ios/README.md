@@ -1,8 +1,6 @@
-# STÆRK til iPhone
+# Styrke til iPhone
 
-Native SwiftUI-app til Martin. Den deler program, vaner og dansk UI med PWA’en, men kører lokalt på iPhone med SwiftData, Swift Charts, PhotosPicker og Apple Health.
-
-PWA’en i repo-roden er uændret. Denne mappe er et separat Xcode-projekt.
+Native SwiftUI-app. Den kører lokalt på iPhone med SwiftData, Swift Charts, PhotosPicker og Apple Health.
 
 ## Krav
 
@@ -33,7 +31,7 @@ xcodegen generate
 2. Fanen **Signing & Capabilities**.
 3. Sæt flueben i **Automatically manage signing**.
 4. Vælg dit **Team** (dit Apple ID). `DEVELOPMENT_TEAM` er tomt i repoet med vilje.
-5. Bundle ID er `dk.bjeld.staerk`. Hvis Xcode klager over at ID’et er optaget, skift det til fx `dk.bjeld.staerk.martin`.
+5. Bundle ID er `com.bjeld.apps.staerk`. Hvis Xcode klager over at ID’et er optaget, skift det til fx `com.bjeld.apps.staerk.martin`.
 6. Capability **HealthKit** skal være synlig (den kommer fra `Staerk.entitlements`). Fjern den ikke.
 
 Første gang du kører på telefonen:
@@ -65,7 +63,7 @@ Usage-teksterne i `Info.plist` er på dansk. Hvis tilladelse afvises, virker res
 
 Alt gemmes i SwiftData på enheden (`staerk-martin`). Ingen konto, ingen server.
 
-Under **Mere → Backup** kan du eksportere/importere JSON. Formatet er det samme som PWA’en (`version: 1`), så en backup fra [bjeld.github.io/Staerk](https://bjeld.github.io/Staerk/) kan indlæses her.
+Under **Mere → Backup** kan du eksportere/importere JSON (`version: 1`). Import overskriver alt på enheden.
 
 ## Faner
 
@@ -86,11 +84,11 @@ Programmet er mandag/onsdag/fredag styrke på jobbet før kl. 7, tirsdag/torsdag
 - **Kreatin** hver dag kl. det valgte tidspunkt (standard 06:15)
 - **Træning** mandag, onsdag og fredag på samme tidspunkt
 
-I modsætning til PWA’en kan lokale iOS-påmindelser komme, mens appen er lukket.
+Lokale påmindelser kan komme, mens appen er lukket.
 
 ## Ikon og navn
 
-Hjemmeskærmsnavn: **STÆRK**. Ikonet matcher PWA’ens lime-bolt.
+Hjemmeskærmsnavn: **Styrke**. Ikonet er en lime bolt.
 
 ## Hvis noget fejler
 

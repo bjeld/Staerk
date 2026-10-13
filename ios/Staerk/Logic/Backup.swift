@@ -280,7 +280,7 @@ enum BackupError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .encoding: return "Filen kunne ikke læses. Tjek at det er en STÆRK-backup."
+        case .encoding: return "Filen kunne ikke læses. Tjek at det er en Styrke-backup."
         case .unknownFormat: return "Ukendt backup-format"
         }
     }

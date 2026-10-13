@@ -161,7 +161,7 @@ struct TodayView: View {
                 Text("Apple Health")
                     .font(.system(size: 17, weight: .semibold))
             }
-            Text("STÆRK kan vise skridt, gåafstand, aktiv energi og golf fra Apple Sundhed — og gemme styrketræning og vægt.")
+            Text("Styrke kan vise skridt, gåafstand, aktiv energi og golf fra Apple Sundhed — og gemme styrketræning og vægt.")
                 .font(.system(size: 15))
                 .foregroundStyle(Palette.muted)
             PrimaryButton(title: "Tillad adgang") {

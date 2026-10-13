@@ -59,7 +59,7 @@ final class HealthKitService {
     private let store = HKHealthStore()
 
     var isAvailable: Bool { HKHealthStore.isHealthDataAvailable() }
-    var didRequestAuthorization = UserDefaults.standard.bool(forKey: Self.requestedKey)
+    var didRequestAuthorization = UserDefaults.standard.bool(forKey: HealthKitService.requestedKey)
     var lastError: String?
     var isRefreshing = false
     var today = TodayHealth()
@@ -155,7 +155,7 @@ final class HealthKitService {
         do {
             try await builder.beginCollection(at: start)
             try await builder.addMetadata([
-                HKMetadataKeyWorkoutBrandName: "STÆRK",
+                HKMetadataKeyWorkoutBrandName: "Styrke",
                 HKMetadataKeyIndoorWorkout: true,
             ])
             try await builder.endCollection(at: end)

@@ -112,7 +112,7 @@ struct SettingsView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 14)
                     }
-                    Text("JSON med vaner, træning, mål og fotos. Import overskriver alt på enheden. Kompatibel med PWA-backup.")
+                    Text("JSON med vaner, træning, mål og fotos. Import overskriver alt på enheden.")
                         .font(.system(size: 13))
                         .foregroundStyle(Palette.muted)
                         .padding(.horizontal, 4)
@@ -125,7 +125,7 @@ struct SettingsView: View {
                         .frame(maxWidth: .infinity)
                 }
 
-                Text("STÆRK · vaner og træning forlader aldrig din iPhone. Apple Health deles kun, hvis du giver lov.")
+                Text("Styrke · vaner og træning forlader aldrig din iPhone. Apple Health deles kun, hvis du giver lov.")
                     .font(.system(size: 12))
                     .foregroundStyle(Palette.muted)
                     .multilineTextAlignment(.center)
@@ -156,7 +156,7 @@ struct SettingsView: View {
             switch result {
             case .success(let url):
                 guard url.startAccessingSecurityScopedResource() else {
-                    status = "Filen kunne ikke læses. Tjek at det er en STÆRK-backup."
+                    status = "Filen kunne ikke læses. Tjek at det er en Styrke-backup."
                     return
                 }
                 defer { url.stopAccessingSecurityScopedResource() }
@@ -164,10 +164,10 @@ struct SettingsView: View {
                     pendingImport = text
                     confirmImport = true
                 } else {
-                    status = "Filen kunne ikke læses. Tjek at det er en STÆRK-backup."
+                    status = "Filen kunne ikke læses. Tjek at det er en Styrke-backup."
                 }
             case .failure:
-                status = "Filen kunne ikke læses. Tjek at det er en STÆRK-backup."
+                status = "Filen kunne ikke læses. Tjek at det er en Styrke-backup."
             }
         }
         .confirmationDialog(
@@ -181,7 +181,7 @@ struct SettingsView: View {
                         try BackupService.importJSON(pendingImport, into: context)
                         status = "Backup er indlæst."
                     } catch {
-                        status = "Filen kunne ikke læses. Tjek at det er en STÆRK-backup."
+                        status = "Filen kunne ikke læses. Tjek at det er en Styrke-backup."
                     }
                 }
             }
@@ -201,7 +201,7 @@ struct SettingsView: View {
                     .font(.system(size: 15))
                     .foregroundStyle(Palette.muted)
             }
-            Text("STÆRK læser skridt, gang/løb, aktiv energi, træningspas (inkl. golf) og kropsvægt. Styrkepas og vægt kan skrives tilbage til Sundhed.")
+            Text("Styrke læser skridt, gang/løb, aktiv energi, træningspas (inkl. golf) og kropsvægt. Styrkepas og vægt kan skrives tilbage til Sundhed.")
                 .font(.system(size: 13))
                 .foregroundStyle(Palette.muted)
 
@@ -211,7 +211,7 @@ struct SettingsView: View {
             }
 
             if health.showsDeniedHelp {
-                Text("Adgang er slået fra. Åbn Indstillinger → Sundhed → Dataadgang og vælg STÆRK.")
+                Text("Adgang er slået fra. Åbn Indstillinger → Sundhed → Dataadgang og vælg Styrke.")
                     .font(.system(size: 13))
                     .foregroundStyle(Palette.muted)
                 Button("Åbn Indstillinger") {
@@ -362,7 +362,7 @@ struct SettingsView: View {
             exportDocument = JSONFileDocument(text: json)
             exporting = true
         } catch {
-            status = "Filen kunne ikke læses. Tjek at det er en STÆRK-backup."
+            status = "Filen kunne ikke læses. Tjek at det er en Styrke-backup."
         }
     }
 
