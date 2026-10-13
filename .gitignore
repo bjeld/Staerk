@@ -23,3 +23,8 @@ agent-tools/
 *.njsproj
 *.sln
 *.sw?
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/

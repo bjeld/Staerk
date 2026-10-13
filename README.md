@@ -65,6 +65,10 @@ npm run preview
 
 **Indstillinger → Eksporter data** henter en JSON-fil med vaner, pas, mål og fotos (base64). Import overskriver alt på enheden.
 
+## Native iPhone-app
+
+En separat SwiftUI-app ligger i [`ios/`](ios/README.md). PWA’en her er uændret. Åbn `ios/Staerk.xcodeproj` i Xcode 15+, vælg signing team, og kør på iPhone (iOS 17+).
+
 ## Stack
 
 Vite, React, TypeScript, Tailwind CSS, Dexie (IndexedDB), Recharts, vite-plugin-pwa.
