@@ -1,94 +1,100 @@
-# Styrke til iPhone
+# STÆRK til iPhone
 
-Native SwiftUI-app. Den kører lokalt på iPhone med SwiftData, Swift Charts, PhotosPicker og Apple Health.
+Native SwiftUI-app (iOS 17+) med Clean Architecture. Vaner, træning og krop gemmes lokalt med SwiftData. Apple Health er valgfrit.
+
+Hjemmeskærmsnavn: **Styrke**. App-navn i UI: **STÆRK**.
 
 ## Krav
 
 - Mac med **Xcode 15 eller nyere** (iOS 17 SDK)
-- Martin’s iPhone på **iOS 17+**
+- iPhone på **iOS 17+**
 - Et **Apple ID** (gratis udviklerkonto er nok til at køre på egen telefon)
-- USB-kabel, eller samme Wi-Fi til trådløs debugging
 
-Dette repo kan **ikke** bygges på Linux. Der er ingen Xcode her, så appen er skrevet til at compile, men ikke kørt på simulator eller iPhone.
+Dette repo kan **ikke** bygges på Linux. Der er ingen Xcode i CI-miljøet, så appen er skrevet til at compile, men ikke kørt på simulator eller iPhone.
+
+## Arkitektur
+
+```
+Staerk/
+  App/            App-entry, DI-container, rod-navigation
+  Domain/         Entiteter, use cases, repository-protokoller
+  Data/           SwiftData, HealthKit, notifikationer, backup, skabeloner
+  Presentation/   SwiftUI, view models/helpers, tema, tastatur
+StaerkTests/      Unit tests for streaks, progression, schedule, vaner, enheder
+```
+
+Views indeholder ikke forretningslogik. Streaks, progression og ugeplan ligger i testbare use cases. Data-laget implementerer protokoller via SwiftData.
 
 ## Åbn projektet
 
-1. Åbn `ios/Staerk.xcodeproj` i Xcode (dobbeltklik, eller `open ios/Staerk.xcodeproj`).
-2. Vælg skemaet **Staerk** og destinationen **Martin’s iPhone** (eller en iPhone-simulator).
+1. Åbn `ios/Staerk.xcodeproj` i Xcode.
+2. Vælg skemaet **Staerk** og en iPhone (eller simulator).
 
-Hvis du har [XcodeGen](https://github.com/yonaskolb/XcodeGen) installeret, kan du regenerere projektet fra `project.yml`:
+Hvis du har [XcodeGen](https://github.com/yonaskolb/XcodeGen):
 
 ```bash
 cd ios
 xcodegen generate
 ```
 
-`project.yml` og det committede `.xcodeproj` skal holde trit. Regenerering er valgfri — projektet er allerede genereret.
+Uden XcodeGen kan projektet regenereres med:
 
-## Signing (påkrævet før iPhone)
+```bash
+cd ios
+python3 scripts/generate_xcodeproj.py
+```
 
-1. I Xcode: klik på projektet **Staerk** i navigatoren → target **Staerk**.
-2. Fanen **Signing & Capabilities**.
-3. Sæt flueben i **Automatically manage signing**.
-4. Vælg dit **Team** (dit Apple ID). `DEVELOPMENT_TEAM` er tomt i repoet med vilje.
-5. Bundle ID er `com.bjeld.apps.staerk`. Hvis Xcode klager over at ID’et er optaget, skift det til fx `com.bjeld.apps.staerk.martin`.
-6. Capability **HealthKit** skal være synlig (den kommer fra `Staerk.entitlements`). Fjern den ikke.
+`project.yml` og det committede `.xcodeproj` skal holde trit.
 
-Første gang du kører på telefonen:
+## Signing
 
-1. iPhone: **Indstillinger → Generelt → VPN og enhedsadministration** (eller **Privatliv og sikkerhed → Udviklertilstand**) og slå **Udviklertilstand** til. Telefonen genstarter.
-2. På iPhone: tillad udviklercertifikatet, hvis iOS spørger.
-3. I Xcode: **Product → Run** (⌘R).
+1. Projekt **Staerk** → target **Staerk** → **Signing & Capabilities**.
+2. **Automatically manage signing**.
+3. Vælg **Team**. `DEVELOPMENT_TEAM` er tomt i repoet med vilje.
+4. Bundle ID: `com.bjeld.apps.staerk`.
+5. Capability **HealthKit** skal være synlig. Fjern den ikke.
+
+## Første start
+
+Nye brugere får et onboarding-flow: navn, enheder (kg/lb, cm/in), vaner fra skabeloner, træningsprogram (fuldkrop 3×, upper/lower, push/pull/legs, eller Martins originale setup).
+
+Alt er bruger-konfigurerbart:
+
+- Vaner: ja/nej, tæller med mål, eller træning. Ugedage, påmindelse, rækkefølge, slet.
+- Program: egne pas og øvelser, eller en skabelon. Ugeplan pr. ugedag.
+- Enheder og mål i Indstillinger.
+
+## Migration
+
+Eksisterende data fra 1.0-store `staerk-martin` (kreatin/vand/alkoholfri, program A/B, pas, målinger, fotos) kopieres ind i den nye `staerk`-store ved første start, hvis den gamle store findes. Onboarding springes over efter migration.
+
+JSON-backup **version 1** kan stadig importeres og konverteres. Ny export er **version 2**.
+
+Hvis migrationen ikke finder den gamle store, start onboarding, eller importer en backup under **Mere → Backup**.
 
 ## HealthKit
 
-Første åbning af **I dag** viser et kort **Tillad adgang**. iOS viser derefter Health-arket.
+Første visning af **I dag** kan vise **Tillad adgang**. Appen **læser** skridt, gang/løb, aktiv energi, træningspas og kropsvægt, og **skriver** styrkepas og vægt.
 
-Appen **læser**
+Hvis tilladelse afvises, virker resten af appen stadig.
 
-- skridt
-- gang- og løbeafstand
-- aktiv energi
-- træningspas (inkl. golf, gåtur, styrke)
-- kropsvægt
+## Tests
 
-og **skriver**
+I Xcode: skema **Staerk** → **Product → Test** (⌘U).
 
-- styrketræningspas, når et pas gemmes som afsluttet
-- kropsvægt, når en vægt logges under **Krop**
+Mål: `StaerkTests` — streaks, progression, ugeplan, vanescoring, enhedskonvertering.
 
-Usage-teksterne i `Info.plist` er på dansk. Hvis tilladelse afvises, virker resten af appen stadig; Health-kortet forklarer, hvordan man slår adgang til i Indstillinger.
+## Sprog
 
-## Data
+Udviklingssprog er **dansk**. Alle UI-strenge ligger i `Staerk/Localizable.xcstrings` med dansk og engelsk. Enheden bestemmer sproget.
 
-Alt gemmes i SwiftData på enheden (`staerk-martin`). Ingen konto, ingen server.
+## Tastatur
 
-Under **Mere → Backup** kan du eksportere/importere JSON (`version: 1`). Import overskriver alt på enheden.
-
-## Faner
-
-| Fane | Indhold |
-|------|---------|
-| **I dag** | Fitness-ringe (kreatin, vand, alkoholfri), Health-aktivitet, vaner, golf/gåtur |
-| **Træning** | Program A/B, sæt-log med sidste tal og progression, historik |
-| **Vaner** | Streaks, ugeoversigt, sæt pr. muskel, månedskalender |
-| **Krop** | Vægt, talje, grafer, fotos og før/efter |
-| **Mere** | Navn, mål, lys/mørk/system, Health, notifikationer, backup |
-
-Programmet er mandag/onsdag/fredag styrke på jobbet før kl. 7, tirsdag/torsdag hjemme/restitution, weekend golf/gåtur. A/B roterer efter sidste afsluttede pas.
-
-## Notifikationer
-
-**Mere → Tillad notifikationer**, derefter:
-
-- **Kreatin** hver dag kl. det valgte tidspunkt (standard 06:15)
-- **Træning** mandag, onsdag og fredag på samme tidspunkt
-
-Lokale påmindelser kan komme, mens appen er lukket.
+Scroll views bruger `scrollDismissesKeyboard`. Tryk udenfor og en **Færdig**-knap på numerisk tastatur lukker tastaturet. `FocusState` bruges på steppere.
 
 ## Ikon og navn
 
-Hjemmeskærmsnavn: **Styrke**. Ikonet er en lime bolt.
+Hjemmeskærmsnavn: **Styrke**. Accent: volt/neon.
 
 ## Hvis noget fejler
 
@@ -97,5 +103,5 @@ Hjemmeskærmsnavn: **Styrke**. Ikonet er en lime bolt.
 | *Signing for "Staerk" requires a development team* | Vælg Team under Signing & Capabilities |
 | *Failed to register bundle identifier* | Skift bundle ID |
 | Health-ark vises ikke | Capability HealthKit mangler, eller simulator uden Health-data |
-| Notifikationer kommer ikke | Tilladelse, Fokustilstand, og at tidspunktet er i fremtiden |
-| Fotos kan ikke vælges | PhotosPicker kræver ikke fotobiblioteks-permission; prøv et andet billede |
+| Notifikationer kommer ikke | Tilladelse, Fokustilstand, og at vanens påmindelse er slået til |
+| Gammel data mangler | Se **Migration**. Ellers importér JSON-backup |

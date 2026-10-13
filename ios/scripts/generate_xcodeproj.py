@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Generate a Xcode 15-compatible .xcodeproj for Styrke (no XcodeGen required)."""
+"""Generate a Xcode 15-compatible .xcodeproj for Staerk (no XcodeGen required)."""
 
 from __future__ import annotations
 
 import hashlib
-import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "Staerk"
+TESTS = ROOT / "StaerkTests"
 PROJ = ROOT / "Staerk.xcodeproj"
 
 
@@ -23,15 +23,17 @@ def pbx_path(path: Path) -> str:
 
 def main() -> None:
     swift_files = sorted(APP.rglob("*.swift"))
+    test_files = sorted(TESTS.rglob("*.swift")) if TESTS.exists() else []
     resource_files = [
         APP / "Assets.xcassets",
         APP / "PrivacyInfo.xcprivacy",
+        APP / "Localizable.xcstrings",
+        APP / "InfoPlist.xcstrings",
     ]
     plist = APP / "Info.plist"
     entitlements = APP / "Staerk.entitlements"
 
     file_refs: dict[str, tuple[str, str, str]] = {}
-    # id -> (comment, path, lastKnownFileType)
 
     def add_ref(path: Path, file_type: str) -> str:
         key = pbx_path(path)
@@ -39,15 +41,18 @@ def main() -> None:
         file_refs[key] = (ident, path.name, file_type)
         return ident
 
-    for path in swift_files:
+    for path in swift_files + test_files:
         add_ref(path, "sourcecode.swift")
     add_ref(APP / "Assets.xcassets", "folder.assetcatalog")
     add_ref(APP / "PrivacyInfo.xcprivacy", "text.xml")
+    add_ref(APP / "Localizable.xcstrings", "text.json.xcstrings")
+    add_ref(APP / "InfoPlist.xcstrings", "text.json.xcstrings")
     add_ref(plist, "text.plist.xml")
     add_ref(entitlements, "text.plist.entitlements")
 
     frameworks = {
         "HealthKit.framework": ("wrapper.framework", "System/Library/Frameworks/HealthKit.framework"),
+        "XCTest.framework": ("wrapper.framework", "System/Library/Frameworks/XCTest.framework"),
     }
     fw_ids = {}
     for name, (ftype, path) in frameworks.items():
@@ -58,6 +63,8 @@ def main() -> None:
     source_build = []
     resource_build = []
     framework_build = []
+    test_source_build = []
+    test_framework_build = []
     build_file_entries = []
 
     for path in swift_files:
@@ -65,30 +72,44 @@ def main() -> None:
         ref_id = file_refs[key][0]
         bid = uid(f"build:{key}")
         source_build.append(bid)
-        build_file_entries.append((bid, ref_id, path.name))
+        build_file_entries.append((bid, ref_id, path.name, "app"))
+
+    for path in test_files:
+        key = pbx_path(path)
+        ref_id = file_refs[key][0]
+        bid = uid(f"build:{key}")
+        test_source_build.append(bid)
+        build_file_entries.append((bid, ref_id, path.name, "test"))
 
     for path in resource_files:
+        if not path.exists():
+            continue
         key = pbx_path(path)
         ref_id = file_refs[key][0]
         bid = uid(f"build:{key}")
         resource_build.append(bid)
-        build_file_entries.append((bid, ref_id, path.name))
+        build_file_entries.append((bid, ref_id, path.name, "resource"))
 
-    for name in frameworks:
+    for name in ["HealthKit.framework"]:
         ref_id = fw_ids[name]
         bid = uid(f"buildfw:{name}")
         framework_build.append(bid)
-        build_file_entries.append((bid, ref_id, name))
+        build_file_entries.append((bid, ref_id, name, "fw"))
 
-    # Groups
+    for name in ["XCTest.framework"]:
+        ref_id = fw_ids[name]
+        bid = uid(f"buildfw:{name}")
+        test_framework_build.append(bid)
+        build_file_entries.append((bid, ref_id, name, "testfw"))
+
     group_ids = {
         "": uid("group:root"),
         "Staerk": uid("group:Staerk"),
+        "StaerkTests": uid("group:StaerkTests"),
         "Products": uid("group:Products"),
         "Frameworks": uid("group:Frameworks"),
     }
 
-    # Nested groups under Staerk matching folders
     folders: set[str] = set()
     for path in swift_files:
         rel = path.relative_to(APP)
@@ -100,17 +121,26 @@ def main() -> None:
         group_ids[folder] = uid(f"group:{folder}")
 
     product_ref = uid("product:Staerk.app")
+    test_product_ref = uid("product:StaerkTests.xctest")
     target_id = uid("target:Staerk")
+    test_target_id = uid("target:StaerkTests")
     project_id = uid("project:Staerk")
     sources_phase = uid("phase:sources")
     resources_phase = uid("phase:resources")
     frameworks_phase = uid("phase:frameworks")
+    test_sources_phase = uid("phase:testsources")
+    test_frameworks_phase = uid("phase:testframeworks")
     target_config_list = uid("cfglist:target")
+    test_config_list = uid("cfglist:testtarget")
     project_config_list = uid("cfglist:project")
     target_debug = uid("cfg:target:debug")
     target_release = uid("cfg:target:release")
+    test_debug = uid("cfg:test:debug")
+    test_release = uid("cfg:test:release")
     project_debug = uid("cfg:project:debug")
     project_release = uid("cfg:project:release")
+    dep_id = uid("dep:tests-on-app")
+    proxy_id = uid("proxy:app")
 
     lines: list[str] = []
     w = lines.append
@@ -124,7 +154,7 @@ def main() -> None:
     w("")
 
     w("/* Begin PBXBuildFile section */")
-    for bid, ref_id, name in build_file_entries:
+    for bid, ref_id, name, _kind in build_file_entries:
         extra = ""
         if name.endswith(".framework"):
             extra = " settings = {ATTRIBUTES = (Required, ); };"
@@ -132,9 +162,23 @@ def main() -> None:
     w("/* End PBXBuildFile section */")
     w("")
 
+    w("/* Begin PBXContainerItemProxy section */")
+    w(f"\t\t{proxy_id} /* PBXContainerItemProxy */ = {{")
+    w("\t\t\tisa = PBXContainerItemProxy;")
+    w(f"\t\t\tcontainerPortal = {project_id} /* Project object */;")
+    w("\t\t\tproxyType = 1;")
+    w(f"\t\t\tremoteGlobalIDString = {target_id};")
+    w('\t\t\tremoteInfo = Staerk;')
+    w("\t\t};")
+    w("/* End PBXContainerItemProxy section */")
+    w("")
+
     w("/* Begin PBXFileReference section */")
     w(
         f"\t\t{product_ref} /* Staerk.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Staerk.app; sourceTree = BUILT_PRODUCTS_DIR; }};"
+    )
+    w(
+        f"\t\t{test_product_ref} /* StaerkTests.xctest */ = {{isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StaerkTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; }};"
     )
     for key, (ident, name, ftype) in file_refs.items():
         if key.endswith(".framework"):
@@ -143,7 +187,6 @@ def main() -> None:
                 f"\t\t{ident} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = {ftype}; name = {name}; path = {path}; sourceTree = SDKROOT; }};"
             )
         else:
-            rel = key
             w(
                 f"\t\t{ident} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = {ftype}; path = {name}; sourceTree = \"<group>\"; }};"
             )
@@ -151,26 +194,28 @@ def main() -> None:
     w("")
 
     def children_for(folder: str) -> list[tuple[str, str]]:
-        """Return (id, comment) children of a group."""
         kids: list[tuple[str, str]] = []
         if folder == "":
             kids.append((group_ids["Staerk"], "Staerk"))
+            kids.append((group_ids["StaerkTests"], "StaerkTests"))
             kids.append((group_ids["Products"], "Products"))
             kids.append((group_ids["Frameworks"], "Frameworks"))
             return kids
         if folder == "Products":
             kids.append((product_ref, "Staerk.app"))
+            kids.append((test_product_ref, "StaerkTests.xctest"))
             return kids
         if folder == "Frameworks":
             for name, ident in fw_ids.items():
                 kids.append((ident, name))
             return kids
+        if folder == "StaerkTests":
+            for path in test_files:
+                key = pbx_path(path)
+                kids.append((file_refs[key][0], path.name))
+            return kids
 
-        # Staerk root or nested
         base = APP if folder == "Staerk" else APP / folder
-        # subfolders
-        subdirs = sorted({p.parent for p in swift_files if p.parent == base or False})
-        # immediate subfolders
         immediate_dirs: set[Path] = set()
         for path in swift_files:
             try:
@@ -183,19 +228,48 @@ def main() -> None:
             rel = str(d.relative_to(APP))
             kids.append((group_ids[rel], d.name))
 
+        extra_names = {
+            "Info.plist",
+            "Staerk.entitlements",
+            "PrivacyInfo.xcprivacy",
+            "Assets.xcassets",
+            "Localizable.xcstrings",
+            "InfoPlist.xcstrings",
+        }
         for path in sorted(base.iterdir() if base.exists() else []):
             if path.name == ".DS_Store":
                 continue
             if path.suffix == ".swift":
                 key = pbx_path(path)
                 kids.append((file_refs[key][0], path.name))
-            elif path.name in {"Info.plist", "Staerk.entitlements", "PrivacyInfo.xcprivacy", "Assets.xcassets"}:
+            elif path.name in extra_names:
                 key = pbx_path(path)
                 kids.append((file_refs[key][0], path.name))
         return kids
 
+    w("/* Begin PBXFrameworksBuildPhase section */")
+    w(f"\t\t{frameworks_phase} /* Frameworks */ = {{")
+    w("\t\t\tisa = PBXFrameworksBuildPhase;")
+    w("\t\t\tbuildActionMask = 2147483647;")
+    w("\t\t\tfiles = (")
+    for bid in framework_build:
+        w(f"\t\t\t\t{bid} /* Framework */,")
+    w("\t\t\t);")
+    w("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
+    w("\t\t};")
+    w(f"\t\t{test_frameworks_phase} /* Frameworks */ = {{")
+    w("\t\t\tisa = PBXFrameworksBuildPhase;")
+    w("\t\t\tbuildActionMask = 2147483647;")
+    w("\t\t\tfiles = (")
+    for bid in test_framework_build:
+        w(f"\t\t\t\t{bid} /* Framework */,")
+    w("\t\t\t);")
+    w("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
+    w("\t\t};")
+    w("/* End PBXFrameworksBuildPhase section */")
+    w("")
+
     w("/* Begin PBXGroup section */")
-    # root
     w(f"\t\t{group_ids['']} = {{")
     w("\t\t\tisa = PBXGroup;")
     w("\t\t\tchildren = (")
@@ -209,6 +283,7 @@ def main() -> None:
     w("\t\t\tisa = PBXGroup;")
     w("\t\t\tchildren = (")
     w(f"\t\t\t\t{product_ref} /* Staerk.app */,")
+    w(f"\t\t\t\t{test_product_ref} /* StaerkTests.xctest */,")
     w("\t\t\t);")
     w("\t\t\tname = Products;")
     w("\t\t\tsourceTree = \"<group>\";")
@@ -234,6 +309,16 @@ def main() -> None:
     w("\t\t\tsourceTree = \"<group>\";")
     w("\t\t};")
 
+    w(f"\t\t{group_ids['StaerkTests']} /* StaerkTests */ = {{")
+    w("\t\t\tisa = PBXGroup;")
+    w("\t\t\tchildren = (")
+    for ident, name in children_for("StaerkTests"):
+        w(f"\t\t\t\t{ident} /* {name} */,")
+    w("\t\t\t);")
+    w("\t\t\tpath = StaerkTests;")
+    w("\t\t\tsourceTree = \"<group>\";")
+    w("\t\t};")
+
     for folder in sorted(folders):
         ident = group_ids[folder]
         w(f"\t\t{ident} /* {Path(folder).name} */ = {{")
@@ -246,19 +331,6 @@ def main() -> None:
         w("\t\t\tsourceTree = \"<group>\";")
         w("\t\t};")
     w("/* End PBXGroup section */")
-    w("")
-
-    w("/* Begin PBXFrameworksBuildPhase section */")
-    w(f"\t\t{frameworks_phase} /* Frameworks */ = {{")
-    w("\t\t\tisa = PBXFrameworksBuildPhase;")
-    w("\t\t\tbuildActionMask = 2147483647;")
-    w("\t\t\tfiles = (")
-    for bid in framework_build:
-        w(f"\t\t\t\t{bid} /* Framework */,")
-    w("\t\t\t);")
-    w("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
-    w("\t\t};")
-    w("/* End PBXFrameworksBuildPhase section */")
     w("")
 
     w("/* Begin PBXNativeTarget section */")
@@ -279,6 +351,23 @@ def main() -> None:
     w(f"\t\t\tproductReference = {product_ref} /* Staerk.app */;")
     w("\t\t\tproductType = \"com.apple.product-type.application\";")
     w("\t\t};")
+    w(f"\t\t{test_target_id} /* StaerkTests */ = {{")
+    w("\t\t\tisa = PBXNativeTarget;")
+    w(f"\t\t\tbuildConfigurationList = {test_config_list} /* Build configuration list for PBXNativeTarget \"StaerkTests\" */;")
+    w("\t\t\tbuildPhases = (")
+    w(f"\t\t\t\t{test_sources_phase} /* Sources */,")
+    w(f"\t\t\t\t{test_frameworks_phase} /* Frameworks */,")
+    w("\t\t\t);")
+    w("\t\t\tbuildRules = (")
+    w("\t\t\t);")
+    w("\t\t\tdependencies = (")
+    w(f"\t\t\t\t{dep_id} /* PBXTargetDependency */,")
+    w("\t\t\t);")
+    w("\t\t\tname = StaerkTests;")
+    w("\t\t\tproductName = StaerkTests;")
+    w(f"\t\t\tproductReference = {test_product_ref} /* StaerkTests.xctest */;")
+    w("\t\t\tproductType = \"com.apple.product-type.bundle.unit-test\";")
+    w("\t\t};")
     w("/* End PBXNativeTarget section */")
     w("")
 
@@ -293,6 +382,10 @@ def main() -> None:
     w(f"\t\t\t\t\t{target_id} = {{")
     w("\t\t\t\t\t\tCreatedOnToolsVersion = 15.0;")
     w("\t\t\t\t\t};")
+    w(f"\t\t\t\t\t{test_target_id} = {{")
+    w("\t\t\t\t\t\tCreatedOnToolsVersion = 15.0;")
+    w("\t\t\t\t\t\tTestTargetID = " + target_id + ";")
+    w("\t\t\t\t\t};")
     w("\t\t\t\t};")
     w("\t\t\t};")
     w(f"\t\t\tbuildConfigurationList = {project_config_list} /* Build configuration list for PBXProject \"Staerk\" */;")
@@ -301,6 +394,7 @@ def main() -> None:
     w("\t\t\thasScannedForEncodings = 0;")
     w("\t\t\tknownRegions = (")
     w("\t\t\t\tda,")
+    w("\t\t\t\ten,")
     w("\t\t\t\tBase,")
     w("\t\t\t);")
     w(f"\t\t\tmainGroup = {group_ids['']};")
@@ -309,6 +403,7 @@ def main() -> None:
     w("\t\t\tprojectRoot = \"\";")
     w("\t\t\ttargets = (")
     w(f"\t\t\t\t{target_id} /* Staerk */,")
+    w(f"\t\t\t\t{test_target_id} /* StaerkTests */,")
     w("\t\t\t);")
     w("\t\t};")
     w("/* End PBXProject section */")
@@ -332,8 +427,18 @@ def main() -> None:
     w("\t\t\tisa = PBXSourcesBuildPhase;")
     w("\t\t\tbuildActionMask = 2147483647;")
     w("\t\t\tfiles = (")
-    for bid, _, name in build_file_entries:
-        if name.endswith(".swift"):
+    for bid, _, name, kind in build_file_entries:
+        if kind == "app" and name.endswith(".swift"):
+            w(f"\t\t\t\t{bid} /* {name} in Sources */,")
+    w("\t\t\t);")
+    w("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
+    w("\t\t};")
+    w(f"\t\t{test_sources_phase} /* Sources */ = {{")
+    w("\t\t\tisa = PBXSourcesBuildPhase;")
+    w("\t\t\tbuildActionMask = 2147483647;")
+    w("\t\t\tfiles = (")
+    for bid, _, name, kind in build_file_entries:
+        if kind == "test" and name.endswith(".swift"):
             w(f"\t\t\t\t{bid} /* {name} in Sources */,")
     w("\t\t\t);")
     w("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
@@ -341,12 +446,21 @@ def main() -> None:
     w("/* End PBXSourcesBuildPhase section */")
     w("")
 
+    w("/* Begin PBXTargetDependency section */")
+    w(f"\t\t{dep_id} /* PBXTargetDependency */ = {{")
+    w("\t\t\tisa = PBXTargetDependency;")
+    w(f"\t\t\ttarget = {target_id} /* Staerk */;")
+    w(f"\t\t\ttargetProxy = {proxy_id} /* PBXContainerItemProxy */;")
+    w("\t\t};")
+    w("/* End PBXTargetDependency section */")
+    w("")
+
     common_target = """
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Staerk/Staerk.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -356,7 +470,7 @@ def main() -> None:
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.bjeld.apps.staerk;
 				PRODUCT_NAME = Staerk;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -367,6 +481,29 @@ def main() -> None:
 				SWIFT_STRICT_CONCURRENCY = targeted;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 1;
+"""
+
+    common_test = """
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bjeld.apps.staerk.tests;
+				PRODUCT_NAME = StaerkTests;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Staerk.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Staerk";
 """
 
     common_project = """
@@ -468,6 +605,22 @@ def main() -> None:
     w("\t\t\t};")
     w("\t\t\tname = Release;")
     w("\t\t};")
+
+    w(f"\t\t{test_debug} /* Debug */ = {{")
+    w("\t\t\tisa = XCBuildConfiguration;")
+    w("\t\t\tbuildSettings = {")
+    w(common_test)
+    w("\t\t\t};")
+    w("\t\t\tname = Debug;")
+    w("\t\t};")
+
+    w(f"\t\t{test_release} /* Release */ = {{")
+    w("\t\t\tisa = XCBuildConfiguration;")
+    w("\t\t\tbuildSettings = {")
+    w(common_test)
+    w("\t\t\t};")
+    w("\t\t\tname = Release;")
+    w("\t\t};")
     w("/* End XCBuildConfiguration section */")
     w("")
 
@@ -486,6 +639,15 @@ def main() -> None:
     w("\t\t\tbuildConfigurations = (")
     w(f"\t\t\t\t{target_debug} /* Debug */,")
     w(f"\t\t\t\t{target_release} /* Release */,")
+    w("\t\t\t);")
+    w("\t\t\tdefaultConfigurationIsVisible = 0;")
+    w("\t\t\tdefaultConfigurationName = Release;")
+    w("\t\t};")
+    w(f"\t\t{test_config_list} /* Build configuration list for PBXNativeTarget \"StaerkTests\" */ = {{")
+    w("\t\t\tisa = XCConfigurationList;")
+    w("\t\t\tbuildConfigurations = (")
+    w(f"\t\t\t\t{test_debug} /* Debug */,")
+    w(f"\t\t\t\t{test_release} /* Release */,")
     w("\t\t\t);")
     w("\t\t\tdefaultConfigurationIsVisible = 0;")
     w("\t\t\tdefaultConfigurationName = Release;")
@@ -530,6 +692,19 @@ def main() -> None:
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
       shouldAutocreateTestPlan = "YES">
+      <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "{test_target_id}"
+               BuildableName = "StaerkTests.xctest"
+               BlueprintName = "StaerkTests"
+               ReferencedContainer = "container:Staerk.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -581,7 +756,7 @@ def main() -> None:
 </Scheme>
 """
     (scheme_dir / "Staerk.xcscheme").write_text(scheme, encoding="utf-8")
-    print(f"Wrote {PROJ / 'project.pbxproj'} ({len(swift_files)} Swift files)")
+    print(f"Wrote {PROJ / 'project.pbxproj'} ({len(swift_files)} app Swift files, {len(test_files)} tests)")
 
 
 if __name__ == "__main__":

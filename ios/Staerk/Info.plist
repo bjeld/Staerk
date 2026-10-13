@@ -24,12 +24,17 @@
 	<string>public.app-category.healthcare-fitness</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>da</string>
+		<string>en</string>
+	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Styrke bruger kameraet til fremskridtsfotos, så du kan sammenligne din krop over tid.</string>
+	<string>STÆRK bruger kameraet til fremskridtsfotos, så du kan sammenligne din krop over tid.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Styrke læser skridt, gang- og løbeafstand, aktiv energi, træningspas (herunder golf) og kropsvægt fra Apple Sundhed, så dagens aktivitet kan vises på oversigten.</string>
+	<string>STÆRK læser skridt, gang- og løbeafstand, aktiv energi, træningspas (herunder golf) og kropsvægt fra Apple Sundhed, så dagens aktivitet kan vises på oversigten.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Styrke gemmer styrketræning og kropsvægt i Apple Sundhed, så dine pas og din vægt hænger sammen med Fitness og Sundhed.</string>
+	<string>STÆRK gemmer styrketræning og kropsvægt i Apple Sundhed, så dine pas og din vægt hænger sammen med Fitness og Sundhed.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

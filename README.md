@@ -1,7 +1,7 @@
-# Styrke
+# STÆRK
 
-iPhone-app til at holde sig stærk efter 50: styrketræning, vaner og krop. Alt gemmes lokalt på telefonen. Apple Health er valgfrit.
+iPhone-app til vaner, styrketræning og krop. Alt gemmes lokalt på telefonen. Apple Health er valgfrit.
 
 Hjemmeskærmsnavn: **Styrke**.
 
-Åbn `ios/Staerk.xcodeproj` i Xcode 15+ og kør på iPhone (iOS 17+). Signing, HealthKit og backup: [ios/README.md](ios/README.md).
+Åbn `ios/Staerk.xcodeproj` i Xcode 15+ og kør på iPhone (iOS 17+). Arkitektur, signing, HealthKit, migration og tests: [ios/README.md](ios/README.md).
