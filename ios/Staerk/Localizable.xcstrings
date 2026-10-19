@@ -77,13 +77,13 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STÆRK"
+            "value" : "STRK"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STÆRK"
+            "value" : "STRK"
           }
         }
       }
@@ -110,13 +110,13 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filen kunne ikke læses. Tjek at det er en STÆRK-backup."
+            "value" : "Filen kunne ikke læses. Tjek at det er en STRK-backup."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The file could not be read. Check that it is a STÆRK backup."
+            "value" : "The file could not be read. Check that it is a STRK backup."
           }
         }
       }
@@ -1846,13 +1846,13 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STÆRK læser skridt, gang/løb, aktiv energi, træningspas og kropsvægt. Styrkepas og vægt kan skrives tilbage til Sundhed."
+            "value" : "STRK læser skridt, gang/løb, aktiv energi, træningspas og kropsvægt. Styrkepas og vægt kan skrives tilbage til Sundhed."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STÆRK reads steps, walk/run, active energy, workouts and body mass. Strength sessions and weight can be written back to Health."
+            "value" : "STRK reads steps, walk/run, active energy, workouts and body mass. Strength sessions and weight can be written back to Health."
           }
         }
       }
@@ -2016,13 +2016,13 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STÆRK kan vise skridt, gåafstand, aktiv energi og pas fra Apple Sundhed — og gemme styrketræning og vægt."
+            "value" : "STRK kan vise skridt, gåafstand, aktiv energi og pas fra Apple Sundhed — og gemme styrketræning og vægt."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STÆRK can show steps, walking distance, active energy and workouts from Apple Health — and save strength sessions and weight."
+            "value" : "STRK can show steps, walking distance, active energy and workouts from Apple Health — and save strength sessions and weight."
           }
         }
       }
@@ -2828,13 +2828,13 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STÆRK er din træning, dine vaner og din krop — på din iPhone. Ingen konto. Ingen sky. Bare dig."
+            "value" : "STRK er din træning, dine vaner og din krop — på din iPhone. Ingen konto. Ingen sky. Bare dig."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STÆRK is your training, habits and body — on your iPhone. No account. No cloud. Just you."
+            "value" : "STRK is your training, habits and body — on your iPhone. No account. No cloud. Just you."
           }
         }
       }
@@ -3644,13 +3644,13 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STÆRK · vaner og træning forlader aldrig din iPhone. Apple Health deles kun, hvis du giver lov."
+            "value" : "STRK · vaner og træning forlader aldrig din iPhone. Apple Health deles kun, hvis du giver lov."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STÆRK · habits and training never leave your iPhone. Apple Health is shared only if you allow it."
+            "value" : "STRK · habits and training never leave your iPhone. Apple Health is shared only if you allow it."
           }
         }
       }
@@ -4392,13 +4392,13 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fuldkrop A/B, man/ons/fre på jobgymmet. Det originale STÆRK-program."
+            "value" : "Fuldkrop A/B, man/ons/fre på jobgymmet. Det originale STRK-program."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Full-body A/B, Mon/Wed/Fri at the office gym. The original STÆRK program."
+            "value" : "Full-body A/B, Mon/Wed/Fri at the office gym. The original STRK program."
           }
         }
       }

@@ -1,54 +1,98 @@
 {
-  "sourceLanguage": "da",
-  "strings": {
-    "NSCameraUsageDescription": {
-      "localizations": {
-        "da": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "STÆRK bruger kameraet til fremskridtsfotos, så du kan sammenligne din krop over tid."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "STÆRK uses the camera for progress photos so you can compare your body over time."
+  "sourceLanguage" : "da",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "Bundle display name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "STRK"
           }
         }
       }
     },
-    "NSHealthShareUsageDescription": {
-      "localizations": {
-        "da": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "STÆRK læser skridt, gang- og løbeafstand, aktiv energi, træningspas (herunder golf) og kropsvægt fra Apple Sundhed, så dagens aktivitet kan vises på oversigten."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "STÆRK reads steps, walking and running distance, active energy, workouts (including golf) and body mass from Apple Health so today’s activity can appear on the overview."
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "STRK"
           }
         }
       }
     },
-    "NSHealthUpdateUsageDescription": {
-      "localizations": {
-        "da": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "STÆRK gemmer styrketræning og kropsvægt i Apple Sundhed, så dine pas og din vægt hænger sammen med Fitness og Sundhed."
+    "CFBundleSpokenName" : {
+      "comment" : "Accessibility bundle name: STRK is pronounced as the Danish word for strong",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stærk"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "STÆRK saves strength training and body mass to Apple Health so your sessions and weight stay in sync with Fitness and Health."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stærk"
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription" : {
+      "comment" : "Privacy - Camera Usage Description",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STRK bruger kameraet til fremskridtsfotos, så du kan sammenligne din krop over tid."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STRK uses the camera for progress photos so you can compare your body over time."
+          }
+        }
+      }
+    },
+    "NSHealthShareUsageDescription" : {
+      "comment" : "Privacy - Health Share Usage Description",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STRK læser skridt, gang- og løbeafstand, aktiv energi, træningspas (herunder golf) og kropsvægt fra Apple Sundhed, så dagens aktivitet kan vises på oversigten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STRK reads steps, walking and running distance, active energy, workouts (including golf) and body mass from Apple Health so today’s activity can appear on the overview."
+          }
+        }
+      }
+    },
+    "NSHealthUpdateUsageDescription" : {
+      "comment" : "Privacy - Health Update Usage Description",
+      "localizations" : {
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STRK gemmer styrketræning og kropsvægt i Apple Sundhed, så dine pas og din vægt hænger sammen med Fitness og Sundhed."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STRK saves strength training and body mass to Apple Health so your sessions and weight stay in sync with Fitness and Health."
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

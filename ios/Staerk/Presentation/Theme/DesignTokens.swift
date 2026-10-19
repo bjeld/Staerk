@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// Type scale. Display faces are condensed black — the STÆRK voice — and are reserved for
+/// Type scale. Display faces are condensed black — the STRK voice — and are reserved for
 /// screen titles, workout names and numerals. Everything you read in a row is SF Pro.
 enum Typeface {
     static func display(_ size: CGFloat, relativeTo style: UIFont.TextStyle = .largeTitle) -> Font {

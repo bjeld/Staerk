@@ -65,6 +65,32 @@ struct DateBlock: View {
     }
 }
 
+/// The STRK mark — glossy flexed bicep (💪).
+struct MuscleMark: View {
+    var body: some View {
+        Image("MuscleMark")
+            .resizable()
+            .scaledToFit()
+            .accessibilityHidden(true)
+    }
+}
+
+/// The mark on a black tile, matching the home-screen icon.
+struct AppMark: View {
+    var size: CGFloat = 96
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+            .fill(Color.black)
+            .frame(width: size, height: size)
+            .overlay {
+                MuscleMark()
+                    .padding(size * 0.06)
+            }
+            .accessibilityHidden(true)
+    }
+}
+
 extension Color {
     /// Black or white, whichever reads best on top of this colour.
     var onTint: Color {

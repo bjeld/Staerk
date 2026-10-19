@@ -80,21 +80,14 @@ struct OnboardingView: View {
     private var welcome: some View {
         VStack(alignment: .leading, spacing: Space.l) {
             Spacer()
-            ZStack {
-                ProgressRing(progress: 0.82, tint: Palette.accent, lineWidth: 18)
-                    .frame(width: 168, height: 168)
-                ProgressRing(progress: 0.64, tint: Palette.accent.opacity(0.7), lineWidth: 18)
-                    .frame(width: 124, height: 124)
-                ProgressRing(progress: 0.46, tint: Palette.accent.opacity(0.45), lineWidth: 18)
-                    .frame(width: 80, height: 80)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.bottom, Space.xl)
-            .accessibilityHidden(true)
+            AppMark(size: 112)
+                .shadow(color: Color(hex: 0x3B7BFF).opacity(0.45), radius: 28, y: 14)
+                .padding(.bottom, Space.l)
 
             Text(L10n.string("app.name"))
                 .font(Typeface.display(64))
                 .foregroundStyle(Palette.ink)
+                .accessibilityLabel(Text(verbatim: "Stærk"))
             Text(L10n.string("onboarding.welcome.title"))
                 .font(Typeface.cardTitle)
                 .foregroundStyle(Palette.accentInk)
