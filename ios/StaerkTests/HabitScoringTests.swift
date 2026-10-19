@@ -52,4 +52,31 @@ final class HabitScoringTests: XCTestCase {
         let habit = Habit(name: "Custom", kind: .boolean, symbol: "star", notes: "5 g med morgenkaffen eller efter træning")
         XCTAssertEqual(HabitCatalog.refreshedNotes(habit).notes, habit.notes)
     }
+
+    func testHidesWorkoutHabitsWhenNoWorkoutsExist() {
+        let workout = Habit(id: "t", name: "Train", kind: .workout, symbol: "dumbbell.fill")
+        let water = Habit(id: "w", name: "Water", kind: .counter, symbol: "drop.fill", goal: 8)
+        let hidden = HabitScoring.excludingDanglingWorkoutHabits([workout, water], hasWorkouts: false)
+        XCTAssertEqual(hidden.map(\.id), ["w"])
+        XCTAssertEqual(
+            HabitScoring.excludingDanglingWorkoutHabits([workout, water], hasWorkouts: true).map(\.id),
+            ["t", "w"]
+        )
+    }
+
+    func testDayRatioIgnoresDanglingWorkoutHabits() {
+        let workout = Habit(id: "t", name: "Train", kind: .workout, symbol: "dumbbell.fill", weekdays: .all)
+        let water = Habit(id: "w", name: "Water", kind: .boolean, symbol: "drop.fill", weekdays: .all)
+        let monday = "2026-10-12"
+        let entries = [HabitEntry(habitID: "w", dateKey: monday, boolValue: true)]
+        let visible = HabitScoring.excludingDanglingWorkoutHabits([workout, water], hasWorkouts: false)
+        XCTAssertEqual(
+            HabitScoring.dayRatio(habits: visible, entries: entries, trained: false, dateKey: monday),
+            1
+        )
+        XCTAssertEqual(
+            HabitScoring.dayRatio(habits: [workout, water], entries: entries, trained: false, dateKey: monday),
+            0.5
+        )
+    }
 }

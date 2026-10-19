@@ -21,9 +21,14 @@ struct TrainingView: View {
     private var todayDone: SessionLog? {
         sessions.first { $0.dateKey == Dates.key() && $0.completed }
     }
-    private var isTrainingDay: Bool { ScheduleResolver.isTrainingDay(date: Date(), schedule: schedule) }
+    private var dayStatus: DayTrainingStatus {
+        ScheduleResolver.status(on: Date(), schedule: schedule, workouts: workouts)
+    }
     private var showsCircuitProgress: Bool {
         workouts.contains(where: \.isCircuit) || sessions.contains(where: \.isCircuit)
+    }
+    private var hasCompletedSessions: Bool {
+        sessions.contains(where: \.completed)
     }
     private var circuitSummary: CircuitProgress.Summary {
         CircuitProgress.summary(
@@ -42,7 +47,11 @@ struct TrainingView: View {
                     subtitle: program?.name ?? L10n.string("training.empty.program")
                 )
 
-                nextCard
+                if workouts.isEmpty {
+                    emptyProgramCard
+                } else {
+                    nextCard
+                }
 
                 if showsCircuitProgress {
                     CircuitProgressCard(summary: circuitSummary)
@@ -56,17 +65,23 @@ struct TrainingView: View {
                     }
                 }
 
-                history
+                if !workouts.isEmpty || hasCompletedSessions {
+                    history
+                }
 
                 NavigationLink {
                     ProgramEditorView()
                 } label: {
-                    Text(L10n.string("training.edit.program"))
+                    Text(workouts.isEmpty ? L10n.string("training.empty.cta") : L10n.string("training.edit.program"))
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(workouts.isEmpty ? Palette.voltForeground : Color.primary)
+                        .staerkWrappingText()
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: 56)
-                        .background(Palette.fill, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .background(
+                            workouts.isEmpty ? Palette.volt : Palette.fill,
+                            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        )
                 }
                 .buttonStyle(.plain)
             }
@@ -79,15 +94,35 @@ struct TrainingView: View {
         .toolbar(.hidden, for: .navigationBar)
     }
 
+    private var emptyProgramCard: some View {
+        GroupedCard {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L10n.string("training.empty.eyebrow"))
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(Palette.volt)
+                    .textCase(.uppercase)
+                Text(L10n.string("training.empty.title"))
+                    .font(Typeface.display(32))
+                    .staerkWrappingText()
+                Text(L10n.string("training.empty.body"))
+                    .font(.subheadline)
+                    .foregroundStyle(Palette.muted)
+                    .staerkWrappingText()
+            }
+            .padding(16)
+        }
+    }
+
     private var nextCard: some View {
         GroupedCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text(isTrainingDay ? L10n.string("training.next.today") : L10n.string("training.next.rest"))
+                Text(nextEyebrow)
                     .font(.footnote.weight(.bold))
                     .foregroundStyle(Palette.volt)
                     .textCase(.uppercase)
                 Text(todayDone?.workoutName ?? picked?.name ?? L10n.string("training.unscheduled"))
                     .font(Typeface.display(32))
+                    .staerkWrappingText()
                 Text(nextBody)
                     .font(.subheadline)
                     .foregroundStyle(Palette.muted)
@@ -124,14 +159,29 @@ struct TrainingView: View {
         }
     }
 
+    private var nextEyebrow: String {
+        switch dayStatus {
+        case .training:
+            return L10n.string("training.next.today")
+        case .rest:
+            return L10n.string("training.next.rest")
+        case .unconfigured:
+            return L10n.string("training.next.today")
+        }
+    }
+
     private var nextBody: String {
-        if !isTrainingDay {
+        switch dayStatus {
+        case .rest:
             return L10n.string("training.rest.body")
+        case .training:
+            if picked?.isCircuit == true {
+                return L10n.string("training.next.body.circuit")
+            }
+            return L10n.string("training.next.body")
+        case .unconfigured:
+            return L10n.string("training.unscheduled.body")
         }
-        if picked?.isCircuit == true {
-            return L10n.string("training.next.body.circuit")
-        }
-        return L10n.string("training.next.body")
     }
 
     private var startTitle: String {

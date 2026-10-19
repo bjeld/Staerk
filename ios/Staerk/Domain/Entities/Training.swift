@@ -409,3 +409,25 @@ struct DayPlan: Equatable, Sendable {
     var workout: WorkoutPlan?
     var isTrainingDay: Bool { workout != nil }
 }
+
+/// What Today / Training should show for a given date.
+/// Recovery copy is only valid when a live schedule exists.
+enum DayTrainingStatus: Equatable, Sendable {
+    case unconfigured
+    case rest
+    case training(WorkoutPlan)
+
+    var workout: WorkoutPlan? {
+        if case .training(let workout) = self { return workout }
+        return nil
+    }
+
+    var isTrainingDay: Bool {
+        if case .training = self { return true }
+        return false
+    }
+
+    var showsStatus: Bool {
+        self != .unconfigured
+    }
+}

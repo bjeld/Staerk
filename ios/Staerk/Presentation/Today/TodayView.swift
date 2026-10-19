@@ -8,6 +8,7 @@ struct TodayView: View {
     @Query private var entryRows: [HabitEntryRecord]
     @Query private var settingsRows: [SettingsRecord]
     @Query(sort: \SessionRecord.dateKey, order: .reverse) private var sessionRows: [SessionRecord]
+    @Query private var programRows: [ProgramRecord]
     @Query private var workoutRows: [WorkoutRecord]
     @Query private var scheduleRows: [ScheduleRecord]
     @Query(filter: #Predicate<ExerciseRecord> { !$0.archived }, sort: \ExerciseRecord.sortOrder)
@@ -21,15 +22,28 @@ struct TodayView: View {
     }
     private var sessions: [SessionLog] { sessionRows.map { $0.asDomain() } }
     private var schedule: WeeklySchedule { scheduleRows.first?.asDomain() ?? WeeklySchedule() }
-    private var workouts: [WorkoutPlan] { workoutRows.map { $0.asDomain() } }
-    private var dayPlan: DayPlan { ScheduleResolver.plan(on: Date(), schedule: schedule, workouts: workouts) }
-    private var todaysHabits: [Habit] { habits.filter { $0.applies(onKey: todayKey) } }
+    private var program: TrainingProgram? {
+        programRows.first { $0.isActive }?.asDomain() ?? programRows.first?.asDomain()
+    }
+    private var workouts: [WorkoutPlan] {
+        guard let program else { return [] }
+        return workoutRows.filter { $0.programID == program.id }.map { $0.asDomain() }
+    }
+    private var hasWorkouts: Bool { !workouts.isEmpty }
+    private var visibleHabits: [Habit] {
+        HabitScoring.excludingDanglingWorkoutHabits(habits, hasWorkouts: hasWorkouts)
+    }
+    private var dayStatus: DayTrainingStatus {
+        ScheduleResolver.status(on: Date(), schedule: schedule, workouts: workouts)
+    }
+    private var todaysHabits: [Habit] { visibleHabits.filter { $0.applies(onKey: todayKey) } }
     private var trainedToday: Bool {
-        sessions.contains { $0.dateKey == todayKey && $0.completed }
+        hasWorkouts && sessions.contains { $0.dateKey == todayKey && $0.completed }
     }
     private var todaySession: SessionLog? {
         sessions.first { $0.dateKey == todayKey && $0.completed }
     }
+    private var remainingHabits: Int { max(0, todaysHabits.count - habitsDoneToday) }
 
     private var ratio: Double {
         HabitScoring.dayRatio(habits: todaysHabits, entries: todayEntries, trained: trainedToday, dateKey: todayKey)
@@ -42,9 +56,9 @@ struct TodayView: View {
         let trained = Set(sessions.filter(\.completed).map(\.dateKey))
         for key in week {
             map[key] = HabitScoring.dayRatio(
-                habits: habits,
+                habits: visibleHabits,
                 entries: grouped[key] ?? [],
-                trained: trained.contains(key),
+                trained: hasWorkouts && trained.contains(key),
                 dateKey: key
             )
         }
@@ -63,7 +77,10 @@ struct TodayView: View {
                     WeekStripView(today: todayKey, marks: weekMarks)
                 }
 
-                heroCard
+                habitHeroCard
+                if dayStatus.showsStatus {
+                    trainingStatusCard
+                }
                 healthCard
 
                 if !todaysHabits.isEmpty {
@@ -120,32 +137,52 @@ struct TodayView: View {
         return L10n.format("greeting.named", Dates.greeting(), name)
     }
 
-    private var heroCard: some View {
+    private var habitHeroCard: some View {
+        GroupedCard {
+            HStack(alignment: .center, spacing: 16) {
+                CompletionRing(
+                    progress: ratio,
+                    label: "\(Int((ratio * 100).rounded()))%",
+                    caption: L10n.string("today.complete")
+                )
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(L10n.string("today.summary.eyebrow"))
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(Palette.volt)
+                        .textCase(.uppercase)
+                    Text(L10n.format("today.habits.summary", habitsDoneToday, todaysHabits.count))
+                        .font(Typeface.card)
+                        .staerkWrappingText()
+                    Text(habitHeroSubtitle)
+                        .font(.footnote)
+                        .foregroundStyle(Palette.muted)
+                        .staerkWrappingText()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(20)
+        }
+    }
+
+    private var trainingStatusCard: some View {
         GroupedCard {
             VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .center, spacing: 16) {
-                    CompletionRing(
-                        progress: ratio,
-                        label: "\(Int((ratio * 100).rounded()))%",
-                        caption: L10n.string("today.complete")
-                    )
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(dayPlan.isTrainingDay ? L10n.string("today.train") : L10n.string("today.rest"))
-                            .font(.footnote.weight(.bold))
-                            .foregroundStyle(Palette.volt)
-                            .textCase(.uppercase)
-                        Text(heroTitle)
-                            .font(Typeface.card)
-                            .staerkWrappingText()
-                        Text(heroSubtitle)
-                            .font(.footnote)
-                            .foregroundStyle(Palette.muted)
-                            .staerkWrappingText()
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(dayStatus.isTrainingDay ? L10n.string("today.train") : L10n.string("today.rest"))
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(Palette.volt)
+                        .textCase(.uppercase)
+                    Text(heroTitle)
+                        .font(Typeface.card)
+                        .staerkWrappingText()
+                    Text(heroSubtitle)
+                        .font(.footnote)
+                        .foregroundStyle(Palette.muted)
+                        .staerkWrappingText()
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                if dayPlan.isTrainingDay {
+                if dayStatus.isTrainingDay {
                     NavigationLink {
                         if let todaySession {
                             SessionDetailView(sessionID: todaySession.id)
@@ -167,8 +204,18 @@ struct TodayView: View {
         }
     }
 
+    private var habitHeroSubtitle: String {
+        if todaysHabits.isEmpty {
+            return L10n.string("today.habits.none")
+        }
+        if remainingHabits == 0 {
+            return L10n.string("today.habits.cleared")
+        }
+        return L10n.format("today.habits.remaining", remainingHabits)
+    }
+
     private var heroTitle: String {
-        if let workout = dayPlan.workout {
+        if let workout = dayStatus.workout {
             if todaySession != nil {
                 return L10n.format("today.workout.done", workout.name)
             }
@@ -178,15 +225,15 @@ struct TodayView: View {
     }
 
     private var heroSubtitle: String {
-        if let workout = dayPlan.workout, workout.isCircuit {
+        if let workout = dayStatus.workout, workout.isCircuit {
             if !workout.trimmedLocation.isEmpty {
                 return workout.trimmedLocation
             }
             return L10n.string("workout.kind.circuit")
         }
-        if dayPlan.isTrainingDay {
+        if let workout = dayStatus.workout {
             let names = exerciseRows
-                .filter { $0.workoutID == dayPlan.workout?.id }
+                .filter { $0.workoutID == workout.id }
                 .map { $0.asDomain().muscleGroup.localizedName }
             let unique = Array(NSOrderedSet(array: names)) as? [String] ?? names
             return unique.joined(separator: " · ")
@@ -198,7 +245,7 @@ struct TodayView: View {
         if todaySession != nil {
             return L10n.string("today.see.workout")
         }
-        if dayPlan.workout?.isCircuit == true {
+        if dayStatus.workout?.isCircuit == true {
             return L10n.string("training.start.circuit")
         }
         return L10n.string("today.start.workout")

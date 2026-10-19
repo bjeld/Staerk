@@ -1254,13 +1254,93 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ingen vægte i dag. En gåtur tæller. Vanerne tæller mere."
+            "value": "Ingen træning i dag. En gåtur tæller. Vanerne tæller stadig."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No weights today. A walk counts. The habits count more."
+            "value": "No training today. A walk counts. Habits still count."
+          }
+        }
+      }
+    },
+    "today.summary.eyebrow": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I dag"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        }
+      }
+    },
+    "today.habits.summary": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d af %d vaner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d of %d habits"
+          }
+        }
+      }
+    },
+    "today.habits.remaining": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d tilbage i dag"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d left today"
+          }
+        }
+      }
+    },
+    "today.habits.cleared": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alt klaret"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All done"
+          }
+        }
+      }
+    },
+    "today.habits.none": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingen vaner i dag"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No habits today"
           }
         }
       }
@@ -2150,13 +2230,93 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "I dag er restitution. Programmet venter til næste træningsdag."
+            "value": "I dag er restitution. Næste pas venter til en træningsdag."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Today is recovery. The program waits for the next training day."
+            "value": "Today is recovery. The next session waits for a training day."
+          }
+        }
+      }
+    },
+    "training.empty.eyebrow": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kom i gang"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get started"
+          }
+        }
+      }
+    },
+    "training.empty.title": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intet pas endnu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No workout yet"
+          }
+        }
+      }
+    },
+    "training.empty.body": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vælg en skabelon, eller byg dit eget pas. Så vises træning her og på I dag."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a template, or build your own workout. Training then shows up here and on Today."
+          }
+        }
+      }
+    },
+    "training.empty.cta": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opsæt træning"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set up training"
+          }
+        }
+      }
+    },
+    "training.unscheduled.body": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sæt en ugeplan, eller start et pas når du er klar."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set a weekly plan, or start a session when you’re ready."
           }
         }
       }
