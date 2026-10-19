@@ -91,6 +91,7 @@ struct TrainingView: View {
                 Text(nextBody)
                     .font(.subheadline)
                     .foregroundStyle(Palette.muted)
+                    .staerkWrappingText()
 
                 HStack(spacing: 8) {
                     NavigationLink {
@@ -164,6 +165,7 @@ struct TrainingView: View {
                         ForEach(Array(workout.stations.enumerated()), id: \.element.id) { index, station in
                             Text("\(index + 1). \(station.name)")
                                 .font(.body)
+                                .staerkWrappingText()
                         }
                     }
                 }
@@ -187,17 +189,21 @@ struct TrainingView: View {
                         NavigationLink {
                             ExerciseHistoryView(exerciseID: exercise.id)
                         } label: {
-                            HStack {
+                            HStack(alignment: .top) {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(exercise.name).foregroundStyle(.primary)
+                                    Text(exercise.name)
+                                        .foregroundStyle(.primary)
+                                        .staerkWrappingText()
                                     Text(subtitle(exercise))
                                         .font(.footnote)
                                         .foregroundStyle(Palette.muted)
+                                        .staerkWrappingText()
                                 }
-                                Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 Image(systemName: "chevron.right")
                                     .font(.footnote.weight(.semibold))
                                     .foregroundStyle(Palette.muted)
+                                    .padding(.top, 4)
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 14)
@@ -225,17 +231,21 @@ struct TrainingView: View {
                         NavigationLink {
                             SessionDetailView(sessionID: session.id)
                         } label: {
-                            HStack {
+                            HStack(alignment: .top) {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(session.workoutName).foregroundStyle(.primary)
+                                    Text(session.workoutName)
+                                        .foregroundStyle(.primary)
+                                        .staerkWrappingText()
                                     Text(historySubtitle(session))
                                         .font(.footnote)
                                         .foregroundStyle(Palette.muted)
+                                        .staerkWrappingText()
                                 }
-                                Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 Image(systemName: "chevron.right")
                                     .font(.footnote.weight(.semibold))
                                     .foregroundStyle(Palette.muted)
+                                    .padding(.top, 4)
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 14)

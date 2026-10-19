@@ -70,7 +70,7 @@ struct ProgramEditorView: View {
                                 Text(ProgramCatalog.localizedNotes(blueprint))
                                     .font(.footnote)
                                     .foregroundStyle(Palette.muted)
-                                    .multilineTextAlignment(.leading)
+                                    .staerkWrappingText()
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(16)
@@ -145,6 +145,7 @@ struct ProgramEditorView: View {
                         } else {
                             ForEach(Array(workout.stations.enumerated()), id: \.element.id) { index, station in
                                 Text("\(index + 1). \(station.name)")
+                                    .staerkWrappingText()
                             }
                         }
                     }

@@ -148,7 +148,10 @@ struct SessionView: View {
                     .foregroundStyle(Palette.volt)
 
                 if !exercise.notes.isEmpty {
-                    Text(exercise.notes).font(.footnote).foregroundStyle(Palette.muted)
+                    Text(exercise.notes)
+                        .font(.footnote)
+                        .foregroundStyle(Palette.muted)
+                        .staerkWrappingText()
                 }
 
                 ForEach(blocks[blockIndex].sets.indices, id: \.self) { setIndex in

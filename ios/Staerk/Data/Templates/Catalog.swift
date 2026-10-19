@@ -116,6 +116,59 @@ enum HabitCatalog {
             localizedNotes: String(localized: String.LocalizationValue(template.notesKey))
         )
     }
+
+    /// Old default notes shipped before the shorter card copy. Custom notes are left alone.
+    static let legacyDefaultNotes: [String: [String]] = [
+        "tmpl_creatine": [
+            "5 g med morgenkaffen eller efter træning",
+            "5 g with morning coffee or after training"
+        ],
+        "tmpl_water": [
+            "Glas med et dagligt mål",
+            "Glasses with a daily goal"
+        ],
+        "tmpl_alcohol": [
+            "Søvn, restitution og talje siger tak",
+            "Sleep, recovery and waist will thank you"
+        ],
+        "tmpl_workout": [
+            "Afkryds når passet er klaret — eller lad appen gøre det",
+            "Check it when the session is done — or let the app do it"
+        ],
+        "tmpl_steps": [
+            "Tæl enheder — fx 8.000 skridt som 8",
+            "Count units — e.g. 8,000 steps as 8"
+        ],
+        "tmpl_mobility": [
+            "10 minutter tæller",
+            "10 minutes counts"
+        ],
+        "tmpl_protein": [
+            "Et rigtigt måltid med protein",
+            "A real meal with protein"
+        ],
+        "tmpl_golf": [
+            "Runden tæller som aktiv restitution",
+            "The round counts as active recovery"
+        ]
+    ]
+
+    static func defaultNotes(for templateID: String) -> String? {
+        guard let template = all.first(where: { $0.id == templateID }) else { return nil }
+        return String(localized: String.LocalizationValue(template.notesKey))
+    }
+
+    static func refreshedNotes(_ habit: Habit) -> Habit {
+        guard let templateID = habit.templateID,
+              let fresh = defaultNotes(for: templateID)
+        else { return habit }
+        if habit.notes == fresh { return habit }
+        let legacy = legacyDefaultNotes[templateID] ?? []
+        guard legacy.contains(habit.notes) else { return habit }
+        var copy = habit
+        copy.notes = fresh
+        return copy
+    }
 }
 
 struct ProgramBlueprint: Identifiable {

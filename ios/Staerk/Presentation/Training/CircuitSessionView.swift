@@ -47,7 +47,8 @@ struct CircuitLogCard: View {
                                     .background(Palette.volt, in: Circle())
                                 Text(station.name)
                                     .font(.body.weight(.semibold))
-                                Spacer()
+                                    .staerkWrappingText()
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
@@ -63,10 +64,12 @@ struct CircuitLogCard: View {
                 Text(lastLine(last))
                     .font(.subheadline)
                     .foregroundStyle(Palette.muted)
+                    .staerkWrappingText()
             } else {
                 Text(L10n.string("circuit.first"))
                     .font(.subheadline)
                     .foregroundStyle(Palette.muted)
+                    .staerkWrappingText()
             }
 
             GroupedCard {
@@ -135,8 +138,8 @@ struct EffortPicker: View {
                         Text(L10n.string(EffortRating.localizationKey(value)))
                             .font(.caption2)
                             .foregroundStyle(Palette.muted)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                            .multilineTextAlignment(.center)
+                            .staerkWrappingText()
                     }
                 }
                 .buttonStyle(.plain)
@@ -183,6 +186,7 @@ struct CircuitProgressCard: View {
                     if summary.effortTrend.isEmpty {
                         Text(L10n.string("circuit.progress.effort.empty"))
                             .foregroundStyle(Palette.muted)
+                            .staerkWrappingText()
                     } else {
                         Chart(summary.effortTrend) { sample in
                             LineMark(

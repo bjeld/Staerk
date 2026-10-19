@@ -112,6 +112,7 @@ struct SettingsView: View {
                         Text(L10n.string("settings.reminders.hint"))
                             .font(.footnote)
                             .foregroundStyle(Palette.muted)
+                            .staerkWrappingText()
                     }
                 }
 
@@ -148,6 +149,7 @@ struct SettingsView: View {
                     Text(L10n.string("settings.backup.hint"))
                         .font(.footnote)
                         .foregroundStyle(Palette.muted)
+                        .staerkWrappingText()
                 }
 
                 Button(L10n.string("settings.reset.onboarding")) {
@@ -169,6 +171,7 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(Palette.muted)
                     .multilineTextAlignment(.center)
+                    .staerkWrappingText()
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, 8)
             }
@@ -242,7 +245,10 @@ struct SettingsView: View {
                 Spacer()
                 Text(healthStatusLabel).font(.subheadline).foregroundStyle(Palette.muted)
             }
-            Text(L10n.string("health.detail")).font(.footnote).foregroundStyle(Palette.muted)
+            Text(L10n.string("health.detail"))
+                .font(.footnote)
+                .foregroundStyle(Palette.muted)
+                .staerkWrappingText()
             if health.showsDeniedHelp {
                 Text(L10n.string("health.denied")).font(.footnote).foregroundStyle(Palette.muted)
                 Button(L10n.string("health.open.settings")) {

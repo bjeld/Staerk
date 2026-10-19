@@ -68,14 +68,21 @@ struct TodayView: View {
 
                 if !todaysHabits.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        SectionLabel(text: L10n.string("today.habits"))
-                        GroupedCard {
-                            ForEach(Array(todaysHabits.enumerated()), id: \.element.id) { index, habit in
-                                habitRow(habit)
-                                if index < todaysHabits.count - 1 {
-                                    Divider().overlay(Palette.hairline).padding(.leading, 70)
-                                }
-                            }
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(L10n.string("today.habits"))
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(Palette.muted)
+                                .textCase(.uppercase)
+                                .tracking(0.8)
+                                .staerkWrappingText()
+                            Spacer(minLength: 8)
+                            Text(L10n.format("today.habits.count", habitsDoneToday, todaysHabits.count))
+                                .font(.footnote.monospacedDigit())
+                                .foregroundStyle(Palette.muted)
+                        }
+                        .padding(.horizontal, 4)
+                        TwoColumnFlow(items: todaysHabits) { habit in
+                            habitCard(habit)
                         }
                     }
                 } else {
@@ -129,9 +136,11 @@ struct TodayView: View {
                             .textCase(.uppercase)
                         Text(heroTitle)
                             .font(Typeface.card)
+                            .staerkWrappingText()
                         Text(heroSubtitle)
                             .font(.footnote)
                             .foregroundStyle(Palette.muted)
+                            .staerkWrappingText()
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -224,6 +233,7 @@ struct TodayView: View {
             Text(L10n.string("health.prompt"))
                 .font(.subheadline)
                 .foregroundStyle(Palette.muted)
+                .staerkWrappingText()
             PrimaryButton(title: L10n.string("health.allow")) {
                 Task { await health.requestAccess() }
             }
@@ -254,11 +264,13 @@ struct TodayView: View {
                             .frame(width: 30)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(L10n.string(workout.kind.titleKey))
+                                .staerkWrappingText()
                             Text(L10n.format("health.minutes", workout.durationMinutes))
                                 .font(.footnote)
                                 .foregroundStyle(Palette.muted)
+                                .staerkWrappingText()
                         }
-                        Spacer()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
@@ -267,34 +279,28 @@ struct TodayView: View {
         }
     }
 
-    @ViewBuilder
-    private func habitRow(_ habit: Habit) -> some View {
+    private var habitsDoneToday: Int {
+        HabitScoring.dayScore(
+            habits: todaysHabits,
+            entries: todayEntries,
+            trained: trainedToday,
+            dateKey: todayKey
+        )
+    }
+
+    private func habitCard(_ habit: Habit) -> some View {
         let entry = todayEntries.first { $0.habitID == habit.id } ?? HabitEntry(habitID: habit.id, dateKey: todayKey)
-        switch habit.kind {
-        case .boolean, .workout:
-            HabitToggleRow(
-                title: habit.name,
-                hint: habit.notes,
-                tint: Color(hexString: habit.tintHex),
-                symbol: habit.symbol,
-                isOn: HabitScoring.isComplete(habit: habit, entry: entry, trained: trainedToday)
-            ) {
-                toggle(habit, entry: entry)
-            }
-        case .counter:
-            CounterHabitRow(
-                title: habit.name,
-                hint: habit.notes,
-                tint: Color(hexString: habit.tintHex),
-                symbol: habit.symbol,
-                value: entry.countValue,
-                goal: habit.goal
-            ) { next in
+        return HabitDayCard(
+            habit: habit,
+            isOn: HabitScoring.isComplete(habit: habit, entry: entry, trained: trainedToday),
+            count: entry.countValue,
+            onToggle: { toggle(habit, entry: entry) },
+            onCount: { next in
                 var updated = entry
                 updated.countValue = next
                 try? app.habits.upsert(updated)
             }
-        }
+        )
     }
 
     private func toggle(_ habit: Habit, entry: HabitEntry) {

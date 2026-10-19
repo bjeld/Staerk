@@ -4150,13 +4150,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "5 g med morgenkaffen eller efter træning"
+            "value": "5 g med kaffen"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "5 g with morning coffee or after training"
+            "value": "5 g with coffee"
           }
         }
       }
@@ -4182,13 +4182,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Glas med et dagligt mål"
+            "value": "Glas mod dagens mål"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Glasses with a daily goal"
+            "value": "Glasses toward today’s goal"
           }
         }
       }
@@ -4214,13 +4214,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Søvn, restitution og talje siger tak"
+            "value": "Søvn og restitution"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sleep, recovery and waist will thank you"
+            "value": "Sleep and recovery"
           }
         }
       }
@@ -4246,13 +4246,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Afkryds når passet er klaret — eller lad appen gøre det"
+            "value": "Når passet er klaret"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Check it when the session is done — or let the app do it"
+            "value": "When the session is done"
           }
         }
       }
@@ -4278,13 +4278,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tæl enheder — fx 8.000 skridt som 8"
+            "value": "Fx 8.000 skridt som 8"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Count units — e.g. 8,000 steps as 8"
+            "value": "E.g. 8,000 steps as 8"
           }
         }
       }
@@ -4310,13 +4310,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "10 minutter tæller"
+            "value": "10 minutter"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "10 minutes counts"
+            "value": "10 minutes"
           }
         }
       }
@@ -4342,13 +4342,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Et rigtigt måltid med protein"
+            "value": "Et måltid med protein"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A real meal with protein"
+            "value": "A meal with protein"
           }
         }
       }
@@ -4374,13 +4374,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runden tæller som aktiv restitution"
+            "value": "Aktiv restitution"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The round counts as active recovery"
+            "value": "Active recovery"
           }
         }
       }
@@ -5789,6 +5789,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Circuit training"
+          }
+        }
+      }
+    },
+    "today.habits.count": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d/%d"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d/%d"
           }
         }
       }

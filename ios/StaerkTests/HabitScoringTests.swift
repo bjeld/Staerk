@@ -33,4 +33,23 @@ final class HabitScoringTests: XCTestCase {
         XCTAssertEqual(score.total, 7)
         XCTAssertEqual(score.done, 3)
     }
+
+    func testRefreshesLegacyDefaultNotes() {
+        var habit = HabitCatalog.make(.creatine, sortOrder: 0)
+        habit.notes = "5 g med morgenkaffen eller efter træning"
+        let updated = HabitCatalog.refreshedNotes(habit)
+        XCTAssertEqual(updated.notes, HabitCatalog.defaultNotes(for: "tmpl_creatine"))
+        XCTAssertNotEqual(updated.notes, habit.notes)
+    }
+
+    func testLeavesCustomHabitNotesAlone() {
+        var habit = HabitCatalog.make(.creatine, sortOrder: 0)
+        habit.notes = "Min egen note"
+        XCTAssertEqual(HabitCatalog.refreshedNotes(habit).notes, "Min egen note")
+    }
+
+    func testDoesNotRefreshUnknownTemplate() {
+        let habit = Habit(name: "Custom", kind: .boolean, symbol: "star", notes: "5 g med morgenkaffen eller efter træning")
+        XCTAssertEqual(HabitCatalog.refreshedNotes(habit).notes, habit.notes)
+    }
 }

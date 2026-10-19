@@ -13,6 +13,7 @@ enum StoreBootstrap {
             let container = try ModelContainer(for: schema, configurations: [configuration])
             migrateIfNeeded(into: container.mainContext)
             migrateCircuitProgramsIfNeeded(into: container.mainContext)
+            refreshDefaultHabitNotesIfNeeded(into: container.mainContext)
             return container
         } catch {
             fatalError("SwiftData could not open: \(error)")
@@ -280,6 +281,22 @@ enum StoreBootstrap {
             guard CircuitMigration.shouldConvert(program: program, workouts: workouts) else { continue }
             convertToLoopCircuit(program: record, into: context)
             changed = true
+        }
+        if changed {
+            try? context.save()
+        }
+    }
+
+    static func refreshDefaultHabitNotesIfNeeded(into context: ModelContext) {
+        let rows = (try? context.fetch(FetchDescriptor<HabitRecord>())) ?? []
+        var changed = false
+        for row in rows {
+            let habit = row.asDomain()
+            let updated = HabitCatalog.refreshedNotes(habit)
+            if updated.notes != habit.notes {
+                row.apply(updated)
+                changed = true
+            }
         }
         if changed {
             try? context.save()

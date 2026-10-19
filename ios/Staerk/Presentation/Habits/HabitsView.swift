@@ -32,30 +32,29 @@ struct HabitsView: View {
                             .padding(16)
                     }
                 } else {
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        ForEach(habits) { habit in
-                            let value = StreakCalculator.habitStreak(
-                                habit: habit,
-                                entries: entries.filter { $0.habitID == habit.id },
-                                sessions: sessions,
-                                today: today
-                            )
-                            GroupedCard {
-                                VStack(spacing: 8) {
-                                    ProgressRingView(
-                                        value: Double(min(value, 14)),
-                                        maxValue: 14,
-                                        color: Color(hexString: habit.tintHex),
-                                        label: "\(value)",
-                                        sub: L10n.string("habits.days")
-                                    )
-                                    Text(habit.name)
-                                        .font(.footnote.weight(.semibold))
-                                        .lineLimit(1)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(12)
+                    TwoColumnFlow(items: habits) { habit in
+                        let value = StreakCalculator.habitStreak(
+                            habit: habit,
+                            entries: entries.filter { $0.habitID == habit.id },
+                            sessions: sessions,
+                            today: today
+                        )
+                        GroupedCard {
+                            VStack(spacing: 8) {
+                                ProgressRingView(
+                                    value: Double(min(value, 14)),
+                                    maxValue: 14,
+                                    color: Color(hexString: habit.tintHex),
+                                    label: "\(value)",
+                                    sub: L10n.string("habits.days")
+                                )
+                                Text(habit.name)
+                                    .font(.footnote.weight(.semibold))
+                                    .multilineTextAlignment(.center)
+                                    .staerkWrappingText()
                             }
+                            .frame(maxWidth: .infinity)
+                            .padding(12)
                         }
                     }
                     weekCard
@@ -87,14 +86,17 @@ struct HabitsView: View {
                         SectionLabel(text: L10n.string("habits.manage"))
                         GroupedCard {
                             ForEach(Array(habits.enumerated()), id: \.element.id) { index, habit in
-                                HStack {
+                                HStack(alignment: .top) {
                                     SymbolCircle(symbol: habit.symbol, tint: Color(hexString: habit.tintHex), size: 32)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(habit.name)
+                                            .staerkWrappingText()
                                         Text(habit.kind.localizedName)
                                             .font(.footnote)
                                             .foregroundStyle(Palette.muted)
+                                            .staerkWrappingText()
                                     }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                     Spacer()
                                     Button(L10n.string("common.edit")) { editor = habit }
                                         .font(.subheadline.weight(.semibold))
