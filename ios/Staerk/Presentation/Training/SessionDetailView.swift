@@ -22,6 +22,31 @@ struct SessionDetailView: View {
                         subtitle: "\(Dates.prettyLong(key: session.dateKey)) · \(session.completed ? L10n.string("session.completed") : L10n.string("session.draft.status"))"
                     )
 
+                    if session.isCircuit {
+                        GroupedCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(L10n.string("workout.kind.circuit"))
+                                    .font(.footnote.weight(.bold))
+                                    .foregroundStyle(Palette.volt)
+                                if let minutes = session.resolvedDurationMinutes {
+                                    detailRow(L10n.string("circuit.duration"), L10n.format("circuit.minutes.short", minutes))
+                                }
+                                if let rounds = session.rounds {
+                                    detailRow(L10n.string("circuit.rounds"), "\(rounds)")
+                                }
+                                if let effort = session.effort {
+                                    detailRow(L10n.string("circuit.effort"), L10n.format("circuit.effort.short", effort))
+                                }
+                                if let note = session.note, !note.isEmpty {
+                                    Text(note)
+                                        .font(.body)
+                                        .padding(.top, 4)
+                                }
+                            }
+                            .padding(16)
+                        }
+                    }
+
                     ForEach(session.exercises) { block in
                         GroupedCard {
                             VStack(alignment: .leading, spacing: 10) {
@@ -79,6 +104,15 @@ struct SessionDetailView: View {
             }
             Button(L10n.string("common.cancel"), role: .cancel) {}
         }
+    }
+
+    private func detailRow(_ title: String, _ value: String) -> some View {
+        HStack {
+            Text(title).foregroundStyle(Palette.muted)
+            Spacer()
+            Text(value).monospacedDigit()
+        }
+        .font(.subheadline)
     }
 
     private func setLine(block: SessionExerciseBlock, set: SetLog) -> String {

@@ -128,7 +128,12 @@ struct ProgramBlueprint: Identifiable {
 
 struct WorkoutBlueprint {
     var nameKey: String
-    var exercises: [ExerciseBlueprint]
+    var kind: WorkoutKind = .detailed
+    var locationKey: String? = nil
+    var stationNameKeys: [String] = []
+    var targetRounds: Int? = nil
+    var targetDurationMinutes: Int? = nil
+    var exercises: [ExerciseBlueprint] = []
 }
 
 struct ExerciseBlueprint {
@@ -177,18 +182,23 @@ enum ProgramCatalog {
         weekdays: [[0], [2], [4]]
     )
 
+    static let loop = ProgramBlueprint(
+        id: "tmpl_loop",
+        nameKey: "template.program.loop.name",
+        notesKey: "template.program.loop.notes",
+        workouts: [loopCircuit],
+        weekdays: [[0, 2, 4]]
+    )
+
     static let martin = ProgramBlueprint(
         id: "tmpl_martin",
         nameKey: "template.program.martin.name",
         notesKey: "template.program.martin.notes",
-        workouts: [
-            WorkoutBlueprint(nameKey: "template.workout.a", exercises: martinA),
-            WorkoutBlueprint(nameKey: "template.workout.b", exercises: martinB)
-        ],
-        weekdays: [[0], [2], [4]]
+        workouts: [loopCircuit],
+        weekdays: [[0, 2, 4]]
     )
 
-    static let all: [ProgramBlueprint] = [fullBody, upperLower, pushPullLegs, martin]
+    static let all: [ProgramBlueprint] = [loop, fullBody, upperLower, pushPullLegs, martin]
 
     static func localizedName(_ blueprint: ProgramBlueprint) -> String {
         String(localized: String.LocalizationValue(blueprint.nameKey))
@@ -198,9 +208,14 @@ enum ProgramCatalog {
         String(localized: String.LocalizationValue(blueprint.notesKey))
     }
 
-    static func materialize(_ blueprint: ProgramBlueprint) -> MaterializedProgram {
+    static func materialize(
+        _ blueprint: ProgramBlueprint,
+        programID: String? = nil,
+        name: String? = nil
+    ) -> MaterializedProgram {
         let program = TrainingProgram(
-            name: localizedName(blueprint),
+            id: programID ?? StaerkID.make("prg"),
+            name: name ?? localizedName(blueprint),
             notes: localizedNotes(blueprint),
             isActive: true,
             templateID: blueprint.id
@@ -211,7 +226,17 @@ enum ProgramCatalog {
             let workout = WorkoutPlan(
                 programID: program.id,
                 name: String(localized: String.LocalizationValue(workoutBlue.nameKey)),
-                sortOrder: index
+                sortOrder: index,
+                kind: workoutBlue.kind,
+                location: workoutBlue.locationKey.map { String(localized: String.LocalizationValue($0)) } ?? "",
+                stations: workoutBlue.stationNameKeys.enumerated().map { stationIndex, key in
+                    CircuitStation(
+                        name: String(localized: String.LocalizationValue(key)),
+                        sortOrder: stationIndex
+                    )
+                },
+                targetRounds: workoutBlue.targetRounds,
+                targetDurationMinutes: workoutBlue.targetDurationMinutes
             )
             workouts.append(workout)
             for (exerciseIndex, item) in workoutBlue.exercises.enumerated() {
@@ -237,9 +262,8 @@ enum ProgramCatalog {
                 ids[day] = workouts[workoutIndex].id
             }
         }
-        // Martin's original A/B rotation: Mon A, Wed B, Fri A — weekdays [[0],[2],[4]]
-        // with 2 workouts maps Mon->A, Wed->B, Fri->A if we cycle.
-        if blueprint.id == "tmpl_martin" || blueprint.id == "tmpl_fullbody" {
+        // Full-body A/B rotation: Mon A, Wed B, Fri A.
+        if blueprint.id == "tmpl_fullbody" {
             ids = Array(repeating: nil, count: 7)
             let a = workouts[0].id
             let b = workouts.count > 1 ? workouts[1].id : a
@@ -315,20 +339,22 @@ private let legs: [ExerciseBlueprint] = [
     .init(id: "ppl_l_plank", nameKey: "ex.plank", muscle: .core, sets: 3, repsMin: 20, repsMax: 40, logType: .seconds, notesKey: "ex.plank.notes")
 ]
 
-private let martinA: [ExerciseBlueprint] = [
-    .init(id: "ex_a_legpress", nameKey: "ex.legpress", muscle: .legs, sets: 3, repsMin: 8, repsMax: 12, logType: .reps, notesKey: "ex.legpress.notes"),
-    .init(id: "ex_a_chestpress", nameKey: "ex.chestpress", muscle: .chest, sets: 3, repsMin: 8, repsMax: 12, logType: .reps, notesKey: "ex.chestpress.notes"),
-    .init(id: "ex_a_latpulldown", nameKey: "ex.latpulldown", muscle: .back, sets: 3, repsMin: 8, repsMax: 12, logType: .reps, notesKey: "ex.latpulldown.notes"),
-    .init(id: "ex_a_shoulderpress", nameKey: "ex.shoulderpress", muscle: .shoulders, sets: 3, repsMin: 8, repsMax: 12, logType: .reps, notesKey: "ex.shoulderpress.notes"),
-    .init(id: "ex_a_triceps", nameKey: "ex.triceps", muscle: .arms, sets: 3, repsMin: 10, repsMax: 12, logType: .reps, notesKey: "ex.triceps.notes"),
-    .init(id: "ex_a_plank", nameKey: "ex.plank", muscle: .core, sets: 3, repsMin: 20, repsMax: 40, logType: .seconds, notesKey: "ex.plank.notes")
-]
-
-private let martinB: [ExerciseBlueprint] = [
-    .init(id: "ex_b_rdl", nameKey: "ex.rdl", muscle: .legs, sets: 3, repsMin: 8, repsMax: 12, logType: .reps, notesKey: "ex.rdl.notes"),
-    .init(id: "ex_b_row", nameKey: "ex.row", muscle: .back, sets: 3, repsMin: 8, repsMax: 12, logType: .reps, notesKey: "ex.row.notes"),
-    .init(id: "ex_b_incline", nameKey: "ex.incline", muscle: .chest, sets: 3, repsMin: 8, repsMax: 12, logType: .reps, notesKey: "ex.incline.notes"),
-    .init(id: "ex_b_lateral", nameKey: "ex.lateral", muscle: .shoulders, sets: 3, repsMin: 10, repsMax: 12, logType: .reps, notesKey: "ex.lateral.notes"),
-    .init(id: "ex_b_curl", nameKey: "ex.curl", muscle: .arms, sets: 3, repsMin: 10, repsMax: 12, logType: .reps, notesKey: "ex.curl.notes"),
-    .init(id: "ex_b_deadbug", nameKey: "ex.deadbug", muscle: .core, sets: 3, repsMin: 8, repsMax: 10, logType: .reps, notesKey: "ex.deadbug.notes")
-]
+private let loopCircuit = WorkoutBlueprint(
+    nameKey: "template.workout.loop",
+    kind: .circuit,
+    locationKey: "template.workout.loop.location",
+    stationNameKeys: [
+        "ex.legpress",
+        "ex.chestpress",
+        "ex.latpulldown",
+        "ex.shoulderpress",
+        "ex.row",
+        "ex.rdl",
+        "ex.incline",
+        "ex.curl",
+        "ex.triceps",
+        "ex.plank"
+    ],
+    targetRounds: 2,
+    targetDurationMinutes: 30
+)

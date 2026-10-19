@@ -25,22 +25,89 @@ struct TrainingProgram: Identifiable, Hashable, Codable, Sendable {
     }
 }
 
+struct CircuitStation: Identifiable, Hashable, Codable, Sendable {
+    var id: String
+    var name: String
+    var sortOrder: Int
+
+    init(
+        id: String = StaerkID.make("st"),
+        name: String,
+        sortOrder: Int = 0
+    ) {
+        self.id = id
+        self.name = name
+        self.sortOrder = sortOrder
+    }
+}
+
 struct WorkoutPlan: Identifiable, Hashable, Codable, Sendable {
     var id: String
     var programID: String
     var name: String
     var sortOrder: Int
+    var kind: WorkoutKind
+    var location: String
+    var stations: [CircuitStation]
+    var targetRounds: Int?
+    var targetDurationMinutes: Int?
 
     init(
         id: String = StaerkID.make("wo"),
         programID: String,
         name: String,
-        sortOrder: Int = 0
+        sortOrder: Int = 0,
+        kind: WorkoutKind = .detailed,
+        location: String = "",
+        stations: [CircuitStation] = [],
+        targetRounds: Int? = nil,
+        targetDurationMinutes: Int? = nil
     ) {
         self.id = id
         self.programID = programID
         self.name = name
         self.sortOrder = sortOrder
+        self.kind = kind
+        self.location = location
+        self.stations = stations.sorted { $0.sortOrder < $1.sortOrder }
+        self.targetRounds = targetRounds.flatMap { $0 > 0 ? $0 : nil }
+        self.targetDurationMinutes = targetDurationMinutes.flatMap { $0 > 0 ? $0 : nil }
+    }
+
+    var isCircuit: Bool { kind.isCircuit }
+
+    var trimmedLocation: String {
+        location.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        programID = try container.decode(String.self, forKey: .programID)
+        name = try container.decode(String.self, forKey: .name)
+        sortOrder = try container.decodeIfPresent(Int.self, forKey: .sortOrder) ?? 0
+        kind = try container.decodeIfPresent(WorkoutKind.self, forKey: .kind) ?? .detailed
+        location = try container.decodeIfPresent(String.self, forKey: .location) ?? ""
+        stations = try container.decodeIfPresent([CircuitStation].self, forKey: .stations) ?? []
+        targetRounds = try container.decodeIfPresent(Int.self, forKey: .targetRounds)
+        targetDurationMinutes = try container.decodeIfPresent(Int.self, forKey: .targetDurationMinutes)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(programID, forKey: .programID)
+        try container.encode(name, forKey: .name)
+        try container.encode(sortOrder, forKey: .sortOrder)
+        try container.encode(kind, forKey: .kind)
+        try container.encode(location, forKey: .location)
+        try container.encode(stations, forKey: .stations)
+        try container.encodeIfPresent(targetRounds, forKey: .targetRounds)
+        try container.encodeIfPresent(targetDurationMinutes, forKey: .targetDurationMinutes)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, programID, name, sortOrder, kind, location, stations, targetRounds, targetDurationMinutes
     }
 }
 
@@ -110,6 +177,10 @@ struct WeeklySchedule: Hashable, Codable, Sendable {
 
     var isEmpty: Bool {
         workoutIDs.allSatisfy { $0 == nil }
+    }
+
+    var scheduledDayCount: Int {
+        workoutIDs.filter { $0 != nil }.count
     }
 }
 
@@ -216,9 +287,33 @@ struct SessionLog: Identifiable, Hashable, Codable, Sendable {
     var finishedAt: Date?
     var note: String?
     var exercises: [SessionExerciseBlock]
+    var kind: WorkoutKind
+    var durationMinutes: Int?
+    var rounds: Int?
+    var effort: Int?
 
     var doneSetCount: Int {
         exercises.reduce(0) { $0 + $1.sets.filter(\.done).count }
+    }
+
+    var isCircuit: Bool { kind.isCircuit }
+
+    /// Minutes to persist / chart. Prefers the logged duration, then wall-clock elapsed time.
+    var resolvedDurationMinutes: Int? {
+        if let durationMinutes, durationMinutes > 0 {
+            return durationMinutes
+        }
+        guard let finishedAt else { return nil }
+        let minutes = Int((finishedAt.timeIntervalSince(startedAt) / 60).rounded())
+        return minutes > 0 ? minutes : nil
+    }
+
+    var healthKitEndDate: Date {
+        if let minutes = resolvedDurationMinutes {
+            return startedAt.addingTimeInterval(TimeInterval(minutes * 60))
+        }
+        let end = finishedAt ?? Date()
+        return end > startedAt ? end : startedAt.addingTimeInterval(60)
     }
 
     init(
@@ -230,7 +325,11 @@ struct SessionLog: Identifiable, Hashable, Codable, Sendable {
         startedAt: Date = Date(),
         finishedAt: Date? = nil,
         note: String? = nil,
-        exercises: [SessionExerciseBlock]
+        exercises: [SessionExerciseBlock],
+        kind: WorkoutKind = .detailed,
+        durationMinutes: Int? = nil,
+        rounds: Int? = nil,
+        effort: Int? = nil
     ) {
         self.id = id
         self.dateKey = dateKey
@@ -239,8 +338,52 @@ struct SessionLog: Identifiable, Hashable, Codable, Sendable {
         self.completed = completed
         self.startedAt = startedAt
         self.finishedAt = finishedAt
-        self.note = note
+        let trimmed = note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        self.note = trimmed.isEmpty ? nil : trimmed
         self.exercises = exercises
+        self.kind = kind
+        self.durationMinutes = durationMinutes.flatMap { $0 > 0 ? $0 : nil }
+        self.rounds = rounds.flatMap { $0 > 0 ? $0 : nil }
+        self.effort = EffortRating.clamped(effort)
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        dateKey = try container.decode(String.self, forKey: .dateKey)
+        workoutID = try container.decode(String.self, forKey: .workoutID)
+        workoutName = try container.decode(String.self, forKey: .workoutName)
+        completed = try container.decode(Bool.self, forKey: .completed)
+        startedAt = try container.decodeIfPresent(Date.self, forKey: .startedAt) ?? Date()
+        finishedAt = try container.decodeIfPresent(Date.self, forKey: .finishedAt)
+        note = try container.decodeIfPresent(String.self, forKey: .note)
+        exercises = try container.decodeIfPresent([SessionExerciseBlock].self, forKey: .exercises) ?? []
+        kind = try container.decodeIfPresent(WorkoutKind.self, forKey: .kind) ?? .detailed
+        durationMinutes = try container.decodeIfPresent(Int.self, forKey: .durationMinutes)
+        rounds = try container.decodeIfPresent(Int.self, forKey: .rounds)
+        effort = EffortRating.clamped(try container.decodeIfPresent(Int.self, forKey: .effort))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(dateKey, forKey: .dateKey)
+        try container.encode(workoutID, forKey: .workoutID)
+        try container.encode(workoutName, forKey: .workoutName)
+        try container.encode(completed, forKey: .completed)
+        try container.encode(startedAt, forKey: .startedAt)
+        try container.encodeIfPresent(finishedAt, forKey: .finishedAt)
+        try container.encodeIfPresent(note, forKey: .note)
+        try container.encode(exercises, forKey: .exercises)
+        try container.encode(kind, forKey: .kind)
+        try container.encodeIfPresent(durationMinutes, forKey: .durationMinutes)
+        try container.encodeIfPresent(rounds, forKey: .rounds)
+        try container.encodeIfPresent(effort, forKey: .effort)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, dateKey, workoutID, workoutName, completed, startedAt, finishedAt, note, exercises
+        case kind, durationMinutes, rounds, effort
     }
 }
 

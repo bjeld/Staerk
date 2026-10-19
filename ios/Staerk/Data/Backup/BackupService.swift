@@ -199,6 +199,7 @@ final class SwiftDataBackupRepository: BackupRepository {
             )
         }
         try context.save()
+        StoreBootstrap.migrateCircuitProgramsIfNeeded(into: context)
     }
 
     private func importV1(_ payload: BackupPayloadV1) throws {

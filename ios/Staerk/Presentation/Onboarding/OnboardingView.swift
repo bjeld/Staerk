@@ -13,7 +13,7 @@ struct OnboardingView: View {
         HabitCatalog.alcoholFree.id,
         HabitCatalog.workout.id
     ]
-    @State private var programID: String = ProgramCatalog.fullBody.id
+    @State private var programID: String = ProgramCatalog.loop.id
     @State private var saving = false
 
     private var templates: [HabitTemplate] { HabitCatalog.all }
@@ -185,6 +185,9 @@ struct OnboardingView: View {
                                 Image(systemName: on ? "checkmark.circle.fill" : "circle")
                                     .foregroundStyle(on ? Palette.volt : Palette.muted)
                             }
+                            Text((program.workouts.first?.kind ?? .detailed).localizedName)
+                                .font(.footnote.weight(.bold))
+                                .foregroundStyle(Palette.volt)
                             Text(ProgramCatalog.localizedNotes(program))
                                 .font(.footnote)
                                 .foregroundStyle(Palette.muted)

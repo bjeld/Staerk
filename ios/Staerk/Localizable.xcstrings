@@ -1046,13 +1046,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Du kan bygge dit eget, eller starte med en skabelon. Martins gamle setup ligger her som skabelon."
+            "value": "Vælg sæt og reps, eller en cirkel som LOOP. Martins setup er LOOP man/ons/fre."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Build your own, or start from a template. Martin’s original setup is available as a template."
+            "value": "Choose sets and reps, or a circuit like LOOP. Martin’s setup is LOOP Mon/Wed/Fri."
           }
         }
       }
@@ -1510,13 +1510,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "STÆRK læser skridt, gang/løb, aktiv energi, træningspas og kropsvægt. Styrkepas og vægt kan skrives tilbage til Sundhed."
+            "value": "STÆRK læser skridt, gang/løb, aktiv energi, træningspas og kropsvægt. Styrke- og cirkelpas samt vægt kan skrives tilbage til Sundhed."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "STÆRK reads steps, walk/run, active energy, workouts and body mass. Strength sessions and weight can be written back to Health."
+            "value": "STÆRK reads steps, walk/run, active energy, workouts and body mass. Strength and circuit sessions and weight can be written back to Health."
           }
         }
       }
@@ -2710,13 +2710,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Byg dine egne pas, eller start fra en skabelon."
+            "value": "Byg egne pas som sæt/reps eller cirkel, eller start fra en skabelon."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Build your own workouts, or start from a template."
+            "value": "Build your own workouts as sets/reps or a circuit, or start from a template."
           }
         }
       }
@@ -4502,13 +4502,13 @@
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fuldkrop A/B, man/ons/fre på jobgymmet. Det originale STÆRK-program."
+            "value": "LOOP-cirkel man/ons/fre. Samme runde hver gang — ét tryk når du er færdig."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Full-body A/B, Mon/Wed/Fri at the office gym. The original STÆRK program."
+            "value": "LOOP circuit Mon/Wed/Fri. The same loop every time — one tap when you are done."
           }
         }
       }
@@ -5037,6 +5037,758 @@
           "stringUnit": {
             "state": "translated",
             "value": "Light dumbbells. Lift to shoulder height. No swinging."
+          }
+        }
+      }
+    },
+    "workout.kind.detailed": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sæt og reps"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sets and reps"
+          }
+        }
+      }
+    },
+    "workout.kind.circuit": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cirkel / fast loop"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Circuit / fixed loop"
+          }
+        }
+      }
+    },
+    "template.program.loop.name": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cirkel / LOOP"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Circuit / LOOP"
+          }
+        }
+      }
+    },
+    "template.program.loop.notes": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samme maskiner i loop hver gang. Log med ét tryk. Man/ons/fre."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The same machines in a loop every time. Log with one tap. Mon/Wed/Fri."
+          }
+        }
+      }
+    },
+    "template.workout.loop": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LOOP"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LOOP"
+          }
+        }
+      }
+    },
+    "template.workout.loop.location": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LOOP"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LOOP"
+          }
+        }
+      }
+    },
+    "circuit.target.duration": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mål: %d min"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target: %d min"
+          }
+        }
+      }
+    },
+    "circuit.target.rounds": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mål: %d runder"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target: %d rounds"
+          }
+        }
+      }
+    },
+    "circuit.stations": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stationer"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stations"
+          }
+        }
+      }
+    },
+    "circuit.first": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Første runde. Tryk færdig, når loopet er kørt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First session. Tap done when the loop is finished."
+          }
+        }
+      }
+    },
+    "circuit.duration": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutter"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutes"
+          }
+        }
+      }
+    },
+    "circuit.rounds": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runder"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rounds"
+          }
+        }
+      }
+    },
+    "circuit.effort": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hvordan føltes det?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How did it feel?"
+          }
+        }
+      }
+    },
+    "circuit.note.placeholder": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note (valgfri)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note (optional)"
+          }
+        }
+      }
+    },
+    "circuit.last": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sidst: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last: %@"
+          }
+        }
+      }
+    },
+    "circuit.minutes.short": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d min"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d min"
+          }
+        }
+      }
+    },
+    "circuit.rounds.short": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d runder"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d rounds"
+          }
+        }
+      }
+    },
+    "circuit.effort.short": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d/5"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d/5"
+          }
+        }
+      }
+    },
+    "effort.1": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meget let"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Very easy"
+          }
+        }
+      }
+    },
+    "effort.2": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Easy"
+          }
+        }
+      }
+    },
+    "effort.3": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Middel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "effort.4": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hårdt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hard"
+          }
+        }
+      }
+    },
+    "effort.5": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max"
+          }
+        }
+      }
+    },
+    "circuit.progress.title": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cirkel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Circuit"
+          }
+        }
+      }
+    },
+    "circuit.progress.week": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denne uge"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week"
+          }
+        }
+      }
+    },
+    "circuit.progress.streak": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Streak"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Streak"
+          }
+        }
+      }
+    },
+    "circuit.progress.time": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tid i alt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total time"
+          }
+        }
+      }
+    },
+    "circuit.progress.effort": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indsats"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Effort"
+          }
+        }
+      }
+    },
+    "circuit.progress.effort.avg": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "snitt %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "avg %@"
+          }
+        }
+      }
+    },
+    "circuit.progress.effort.empty": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log indsats, så kurven kommer."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log effort to see the trend."
+          }
+        }
+      }
+    },
+    "circuit.hours": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d t"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d h"
+          }
+        }
+      }
+    },
+    "circuit.hours.minutes": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d t %d min"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d h %d min"
+          }
+        }
+      }
+    },
+    "session.circuit.done": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Færdig"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "session.circuit.subtitle": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cirkel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Circuit"
+          }
+        }
+      }
+    },
+    "training.next.body.circuit": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samme runde som sidst. Ét tryk, når du er ude af loopet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Same loop as last time. One tap when you are done."
+          }
+        }
+      }
+    },
+    "training.start.circuit": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log pas"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log session"
+          }
+        }
+      }
+    },
+    "training.nostations": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingen stationer endnu. Tilføj dem under programmet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stations yet. Add them in the program editor."
+          }
+        }
+      }
+    },
+    "program.workout.kind": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
+          }
+        }
+      }
+    },
+    "program.workout.location": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sted"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location"
+          }
+        }
+      }
+    },
+    "program.workout.location.placeholder": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "fx LOOP"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. LOOP"
+          }
+        }
+      }
+    },
+    "program.workout.target.duration.off": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingen tidsmål"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No duration target"
+          }
+        }
+      }
+    },
+    "program.workout.target.rounds.off": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intet rundemål"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No rounds target"
+          }
+        }
+      }
+    },
+    "program.workout.stations": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stationer"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stations"
+          }
+        }
+      }
+    },
+    "program.workout.station.name": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stationsnavn"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Station name"
+          }
+        }
+      }
+    },
+    "program.workout.station.add": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ny station"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New station"
+          }
+        }
+      }
+    },
+    "program.edit.workout": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pas"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workout"
+          }
+        }
+      }
+    },
+    "health.kind.circuit": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cirkeltræning"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Circuit training"
           }
         }
       }

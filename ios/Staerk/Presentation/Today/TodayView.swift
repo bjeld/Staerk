@@ -144,7 +144,7 @@ struct TodayView: View {
                             SessionView()
                         }
                     } label: {
-                        Text(todaySession == nil ? L10n.string("today.start.workout") : L10n.string("today.see.workout"))
+                        Text(todayCTA)
                             .font(.headline.weight(.heavy))
                             .foregroundStyle(Palette.voltForeground)
                             .frame(maxWidth: .infinity)
@@ -169,6 +169,12 @@ struct TodayView: View {
     }
 
     private var heroSubtitle: String {
+        if let workout = dayPlan.workout, workout.isCircuit {
+            if !workout.trimmedLocation.isEmpty {
+                return workout.trimmedLocation
+            }
+            return L10n.string("workout.kind.circuit")
+        }
         if dayPlan.isTrainingDay {
             let names = exerciseRows
                 .filter { $0.workoutID == dayPlan.workout?.id }
@@ -177,6 +183,16 @@ struct TodayView: View {
             return unique.joined(separator: " · ")
         }
         return L10n.string("today.rest.body")
+    }
+
+    private var todayCTA: String {
+        if todaySession != nil {
+            return L10n.string("today.see.workout")
+        }
+        if dayPlan.workout?.isCircuit == true {
+            return L10n.string("training.start.circuit")
+        }
+        return L10n.string("today.start.workout")
     }
 
     private var healthCard: some View {

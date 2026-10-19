@@ -18,6 +18,10 @@ extension LogType {
     var localizedName: String { L10n.string(localizationKey) }
 }
 
+extension WorkoutKind {
+    var localizedName: String { L10n.string(localizationKey) }
+}
+
 extension ThemeMode {
     var localizedName: String { L10n.string(localizationKey) }
 }

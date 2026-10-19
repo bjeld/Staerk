@@ -8,9 +8,6 @@ struct TrainingView: View {
     private var exerciseRows: [ExerciseRecord]
     @Query(sort: \SessionRecord.dateKey, order: .reverse) private var sessionRows: [SessionRecord]
     @Query private var scheduleRows: [ScheduleRecord]
-    @Query private var settingsRows: [SettingsRecord]
-
-    private var settings: UserSettings { settingsRows.first?.asDomain() ?? UserSettings() }
     private var program: TrainingProgram? { programRows.first { $0.isActive }?.asDomain() ?? programRows.first?.asDomain() }
     private var workouts: [WorkoutPlan] {
         guard let program else { return [] }
@@ -25,6 +22,17 @@ struct TrainingView: View {
         sessions.first { $0.dateKey == Dates.key() && $0.completed }
     }
     private var isTrainingDay: Bool { ScheduleResolver.isTrainingDay(date: Date(), schedule: schedule) }
+    private var showsCircuitProgress: Bool {
+        workouts.contains(where: \.isCircuit) || sessions.contains(where: \.isCircuit)
+    }
+    private var circuitSummary: CircuitProgress.Summary {
+        CircuitProgress.summary(
+            sessions: sessions,
+            schedule: schedule,
+            today: Dates.key(),
+            weekKeys: Dates.weekKeys()
+        )
+    }
 
     var body: some View {
         ScrollView {
@@ -36,8 +44,16 @@ struct TrainingView: View {
 
                 nextCard
 
+                if showsCircuitProgress {
+                    CircuitProgressCard(summary: circuitSummary)
+                }
+
                 ForEach(workouts) { workout in
-                    workoutList(workout)
+                    if workout.isCircuit {
+                        circuitList(workout)
+                    } else {
+                        workoutList(workout)
+                    }
                 }
 
                 history
@@ -72,7 +88,7 @@ struct TrainingView: View {
                     .textCase(.uppercase)
                 Text(todayDone?.workoutName ?? picked?.name ?? L10n.string("training.unscheduled"))
                     .font(Typeface.display(32))
-                Text(isTrainingDay ? L10n.string("training.next.body") : L10n.string("training.rest.body"))
+                Text(nextBody)
                     .font(.subheadline)
                     .foregroundStyle(Palette.muted)
 
@@ -80,7 +96,7 @@ struct TrainingView: View {
                     NavigationLink {
                         SessionView()
                     } label: {
-                        Text(todayDone == nil ? L10n.string("training.start") : L10n.string("training.new"))
+                        Text(startTitle)
                             .font(.headline.weight(.heavy))
                             .foregroundStyle(Palette.voltForeground)
                             .frame(maxWidth: .infinity)
@@ -104,6 +120,55 @@ struct TrainingView: View {
                 .padding(.top, 8)
             }
             .padding(16)
+        }
+    }
+
+    private var nextBody: String {
+        if !isTrainingDay {
+            return L10n.string("training.rest.body")
+        }
+        if picked?.isCircuit == true {
+            return L10n.string("training.next.body.circuit")
+        }
+        return L10n.string("training.next.body")
+    }
+
+    private var startTitle: String {
+        if todayDone != nil {
+            return L10n.string("training.new")
+        }
+        if picked?.isCircuit == true {
+            return L10n.string("training.start.circuit")
+        }
+        return L10n.string("training.start")
+    }
+
+    private func circuitList(_ workout: WorkoutPlan) -> some View {
+        let active = picked?.id == workout.id && todayDone == nil
+        return VStack(alignment: .leading, spacing: 8) {
+            SectionLabel(text: active ? L10n.format("training.workout.today", workout.name) : workout.name)
+            GroupedCard {
+                VStack(alignment: .leading, spacing: 10) {
+                    if !workout.trimmedLocation.isEmpty {
+                        Label(workout.trimmedLocation, systemImage: "mappin.and.ellipse")
+                            .font(.subheadline)
+                            .foregroundStyle(Palette.muted)
+                    }
+                    Text(L10n.string("workout.kind.circuit"))
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(Palette.volt)
+                    if workout.stations.isEmpty {
+                        Text(L10n.string("training.nostations"))
+                            .foregroundStyle(Palette.muted)
+                    } else {
+                        ForEach(Array(workout.stations.enumerated()), id: \.element.id) { index, station in
+                            Text("\(index + 1). \(station.name)")
+                                .font(.body)
+                        }
+                    }
+                }
+                .padding(16)
+            }
         }
     }
 
@@ -163,7 +228,7 @@ struct TrainingView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(session.workoutName).foregroundStyle(.primary)
-                                    Text(L10n.format("training.history.row", Dates.prettyShort(key: session.dateKey), session.doneSetCount))
+                                    Text(historySubtitle(session))
                                         .font(.footnote)
                                         .foregroundStyle(Palette.muted)
                                 }
@@ -182,6 +247,20 @@ struct TrainingView: View {
                 }
             }
         }
+    }
+
+    private func historySubtitle(_ session: SessionLog) -> String {
+        if session.isCircuit {
+            var parts = [Dates.prettyShort(key: session.dateKey)]
+            if let minutes = session.resolvedDurationMinutes {
+                parts.append(L10n.format("circuit.minutes.short", minutes))
+            }
+            if let effort = session.effort {
+                parts.append(L10n.format("circuit.effort.short", effort))
+            }
+            return parts.joined(separator: " · ")
+        }
+        return L10n.format("training.history.row", Dates.prettyShort(key: session.dateKey), session.doneSetCount)
     }
 
     private func subtitle(_ exercise: ExerciseDefinition) -> String {
