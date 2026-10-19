@@ -47,4 +47,9 @@ extension View {
     func staerkKeyboardImmediate() -> some View {
         modifier(ScrollKeyboardDismiss(mode: .immediately))
     }
+
+    /// A tap gesture on a `Form` swallows taps meant for menu-style `Picker`s, so forms only dismiss on scroll.
+    func staerkFormKeyboard() -> some View {
+        scrollDismissesKeyboard(.immediately)
+    }
 }

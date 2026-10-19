@@ -2,7 +2,7 @@
 
 Native SwiftUI-app (iOS 17+) med Clean Architecture. Vaner, træning og krop gemmes lokalt med SwiftData. Apple Health er valgfrit.
 
-Hjemmeskærmsnavn: **Styrke**. App-navn i UI: **STÆRK**.
+Hjemmeskærmsnavn: **STRK**. App-navn i UI: **STÆRK**.
 
 ## Krav
 
@@ -20,10 +20,10 @@ Staerk/
   Domain/         Entiteter, use cases, repository-protokoller
   Data/           SwiftData, HealthKit, notifikationer, backup, skabeloner
   Presentation/   SwiftUI, view models/helpers, tema, tastatur
-StaerkTests/      Unit tests for streaks, progression, schedule, vaner, enheder
+StaerkTests/      Unit tests for streaks, progression, schedule, vaner, enheder, cirkelpas
 ```
 
-Views indeholder ikke forretningslogik. Streaks, progression og ugeplan ligger i testbare use cases. Data-laget implementerer protokoller via SwiftData.
+Views indeholder ikke forretningslogik. Streaks, progression, cirkel-progress og ugeplan ligger i testbare use cases. Data-laget implementerer protokoller via SwiftData.
 
 ## Åbn projektet
 
@@ -56,25 +56,26 @@ python3 scripts/generate_xcodeproj.py
 
 ## Første start
 
-Nye brugere får et onboarding-flow: navn, enheder (kg/lb, cm/in), vaner fra skabeloner, træningsprogram (fuldkrop 3×, upper/lower, push/pull/legs, eller Martins originale setup).
+Nye brugere får et onboarding-flow: navn, enheder (kg/lb, cm/in), vaner fra skabeloner, træningsprogram (cirkel/LOOP, fuldkrop 3×, upper/lower, push/pull/legs, eller Martins LOOP-setup).
 
 Alt er bruger-konfigurerbart:
 
 - Vaner: ja/nej, tæller med mål, eller træning. Ugedage, påmindelse, rækkefølge, slet.
-- Program: egne pas og øvelser, eller en skabelon. Ugeplan pr. ugedag.
+- Program: egne pas som **sæt/reps** eller **cirkel / fast loop** (valgfrit sted, stationer, tids-/rundemål), eller en skabelon. Ugeplan pr. ugedag.
+- Cirkelpas logges med ét tryk (Færdig) plus valgfri tid, runder, indsats 1–5 og note. Ingen per-sæt tracking.
 - Enheder og mål i Indstillinger.
 
 ## Migration
 
-Eksisterende data fra 1.0-store `staerk-martin` (kreatin/vand/alkoholfri, program A/B, pas, målinger, fotos) kopieres ind i den nye `staerk`-store ved første start, hvis den gamle store findes. Onboarding springes over efter migration.
+Eksisterende data fra 1.0-store `staerk-martin` (kreatin/vand/alkoholfri, program A/B, pas, målinger, fotos) kopieres ind i den nye `staerk`-store ved første start, hvis den gamle store findes. Onboarding springes over efter migration. Martins A/B-program konverteres til LOOP-cirkel man/ons/fre; gamle pas-logs bevares.
 
-JSON-backup **version 1** kan stadig importeres og konverteres. Ny export er **version 2**.
+JSON-backup **version 1** kan stadig importeres og konverteres. Ny export er **version 2** (inkl. cirkelfelter). Et eksisterende Martin-program i den nuværende store migreres sikkert til LOOP ved første start.
 
 Hvis migrationen ikke finder den gamle store, start onboarding, eller importer en backup under **Mere → Backup**.
 
 ## HealthKit
 
-Første visning af **I dag** kan vise **Tillad adgang**. Appen **læser** skridt, gang/løb, aktiv energi, træningspas og kropsvægt, og **skriver** styrkepas og vægt.
+Første visning af **I dag** kan vise **Tillad adgang**. Appen **læser** skridt, gang/løb, aktiv energi, træningspas og kropsvægt, og **skriver** styrkepas (klassisk styrke) eller cirkelpas (funktionel styrke) samt vægt. Cirkelpas gemmes med den loggede varighed.
 
 Hvis tilladelse afvises, virker resten af appen stadig.
 
@@ -82,7 +83,7 @@ Hvis tilladelse afvises, virker resten af appen stadig.
 
 I Xcode: skema **Staerk** → **Product → Test** (⌘U).
 
-Mål: `StaerkTests` — streaks, progression, ugeplan, vanescoring, enhedskonvertering.
+Mål: `StaerkTests` — streaks, progression, ugeplan, vanescoring, enhedskonvertering, cirkel-progress og LOOP-migration.
 
 ## Sprog
 
@@ -94,7 +95,7 @@ Scroll views bruger `scrollDismissesKeyboard`. Tryk udenfor og en **Færdig**-kn
 
 ## Ikon og navn
 
-Hjemmeskærmsnavn: **Styrke**. Accent: volt/neon.
+Hjemmeskærmsnavn: **Styrke**. Accent: cobalt blue.
 
 ## Hvis noget fejler
 

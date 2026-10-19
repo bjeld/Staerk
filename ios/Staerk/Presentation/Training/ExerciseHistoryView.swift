@@ -29,83 +29,118 @@ struct ExerciseHistoryView: View {
     }
 
     var body: some View {
-        ScrollView {
+        Group {
             if let exercise {
-                VStack(alignment: .leading, spacing: 16) {
-                    StaerkHeader(
-                        title: exercise.name,
-                        subtitle: exercise.muscleGroup.localizedName
-                    )
-
-                    GroupedCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(exercise.logType == .seconds ? L10n.string("history.best.time") : L10n.string("history.top.weight"))
-                                .font(Typeface.card)
-                            if points.isEmpty {
-                                Text(L10n.string("history.empty"))
-                                    .foregroundStyle(Palette.muted)
-                            } else {
-                                Chart(points) { point in
-                                    LineMark(
-                                        x: .value("D", point.dateKey),
-                                        y: .value("V", exercise.logType == .seconds ? Double(point.reps) : point.weight)
-                                    )
-                                    .foregroundStyle(Palette.volt)
-                                    .interpolationMethod(.catmullRom)
-                                    PointMark(
-                                        x: .value("D", point.dateKey),
-                                        y: .value("V", exercise.logType == .seconds ? Double(point.reps) : point.weight)
-                                    )
-                                    .foregroundStyle(Palette.volt)
-                                }
-                                .chartXAxis {
-                                    AxisMarks { value in
-                                        AxisValueLabel {
-                                            if let key = value.as(String.self) {
-                                                Text(Dates.prettyShort(key: key))
-                                            }
-                                        }
-                                    }
-                                }
-                                .frame(height: 220)
-                            }
-                        }
-                        .padding(16)
-                    }
-
-                    GroupedCard {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(L10n.string("history.latest")).font(Typeface.card)
-                            if let last = ProgressionCalculator.lastForExercise(sessions: sessions, exerciseId: exerciseID) {
-                                ForEach(Array(last.sets.enumerated()), id: \.offset) { index, set in
-                                    HStack {
-                                        Text(L10n.format("session.set", index + 1)).foregroundStyle(Palette.muted)
-                                        Spacer()
-                                        Text(AdviceFormatter.formatSet(logType: exercise.logType, set: set, unit: settings.weightUnit))
-                                            .monospacedDigit()
-                                    }
-                                    .font(.subheadline)
-                                }
-                                Text(AdviceFormatter.text(ProgressionCalculator.suggestNext(exercise: exercise, last: last), unit: settings.weightUnit))
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(Palette.volt)
-                                    .padding(.top, 4)
-                            } else {
-                                Text(L10n.string("history.none")).foregroundStyle(Palette.muted)
-                            }
-                        }
-                        .padding(16)
-                    }
+                Screen {
+                    ScreenHeader(eyebrow: exercise.muscleGroup.localizedName, title: exercise.name)
+                    chartCard(exercise)
+                    latestCard(exercise)
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 28)
             } else {
-                Text(L10n.string("history.missing")).foregroundStyle(Palette.muted).padding()
+                Screen {
+                    EmptyState(symbol: "hourglass", message: L10n.string("history.missing"))
+                }
             }
         }
-        .staerkKeyboard()
-        .background(Palette.bg.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func value(_ point: ExercisePoint, _ exercise: ExerciseDefinition) -> Double {
+        exercise.logType == .seconds ? Double(point.reps) : point.weight
+    }
+
+    private func unit(_ exercise: ExerciseDefinition) -> String {
+        exercise.logType == .seconds ? "s" : settings.weightUnit.symbol
+    }
+
+    private func chartCard(_ exercise: ExerciseDefinition) -> some View {
+        Card(padding: Space.xl) {
+            Eyebrow(text: exercise.logType == .seconds ? L10n.string("history.best.time") : L10n.string("history.top.weight"))
+            if let last = points.last {
+                HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
+                    Text(UnitConversion.format(value(last, exercise)))
+                        .font(Typeface.hero)
+                        .monospacedDigit()
+                        .foregroundStyle(Palette.ink)
+                    Text(unit(exercise))
+                        .font(Typeface.title(20))
+                        .foregroundStyle(Palette.inkSecondary)
+                }
+                Text(Dates.prettyLong(key: last.dateKey))
+                    .font(.footnote)
+                    .foregroundStyle(Palette.inkSecondary)
+            }
+
+            if points.isEmpty {
+                EmptyState(symbol: "chart.xyaxis.line", message: L10n.string("history.empty"))
+                    .padding(.horizontal, -Space.l)
+                    .padding(.bottom, -Space.l)
+            } else {
+                Chart(points) { point in
+                    AreaMark(x: .value("D", point.dateKey), y: .value("V", value(point, exercise)))
+                        .foregroundStyle(
+                            LinearGradient(colors: [Palette.accent.opacity(0.28), Palette.accent.opacity(0)], startPoint: .top, endPoint: .bottom)
+                        )
+                        .interpolationMethod(.catmullRom)
+                    LineMark(x: .value("D", point.dateKey), y: .value("V", value(point, exercise)))
+                        .foregroundStyle(Palette.accentInk)
+                        .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                        .interpolationMethod(.catmullRom)
+                    PointMark(x: .value("D", point.dateKey), y: .value("V", value(point, exercise)))
+                        .foregroundStyle(Palette.accentInk)
+                        .symbolSize(point.id == points.last?.id ? 70 : 24)
+                }
+                .chartYScale(domain: .automatic(includesZero: false))
+                .chartXAxis {
+                    AxisMarks { axisValue in
+                        AxisValueLabel {
+                            if let key = axisValue.as(String.self) {
+                                Text(Dates.prettyShort(key: key))
+                            }
+                        }
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(position: .trailing) { _ in
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [3, 3]))
+                            .foregroundStyle(Palette.hairline)
+                        AxisValueLabel()
+                    }
+                }
+                .frame(height: 200)
+                .padding(.top, Space.l)
+            }
+        }
+    }
+
+    private func latestCard(_ exercise: ExerciseDefinition) -> some View {
+        TitledSection(title: L10n.string("history.latest")) {
+            Card {
+                if let last = ProgressionCalculator.lastForExercise(sessions: sessions, exerciseId: exerciseID) {
+                    ForEach(Array(last.sets.enumerated()), id: \.offset) { index, set in
+                        HStack {
+                            Text(L10n.format("session.set", index + 1))
+                                .font(.subheadline)
+                                .foregroundStyle(Palette.inkSecondary)
+                            Spacer()
+                            Text(AdviceFormatter.formatSet(logType: exercise.logType, set: set, unit: settings.weightUnit))
+                                .font(.body.weight(.semibold).monospacedDigit())
+                                .foregroundStyle(Palette.ink)
+                        }
+                        .padding(.vertical, Space.s)
+                        if index < last.sets.count - 1 {
+                            RowDivider()
+                        }
+                    }
+                    Callout(text: AdviceFormatter.text(ProgressionCalculator.suggestNext(exercise: exercise, last: last), unit: settings.weightUnit))
+                        .padding(.top, Space.m)
+                } else {
+                    Text(L10n.string("history.none"))
+                        .font(.subheadline)
+                        .foregroundStyle(Palette.inkSecondary)
+                }
+            }
+        }
     }
 }
 

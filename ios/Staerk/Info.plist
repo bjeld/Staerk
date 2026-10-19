@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>da</string>
 	<key>CFBundleDisplayName</key>
-	<string>Styrke</string>
+	<string>STRK</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,9 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Styrke</string>
+	<string>STRK</string>
+	<key>CFBundleSpokenName</key>
+	<string>Stærk</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -30,11 +32,11 @@
 		<string>en</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>STÆRK bruger kameraet til fremskridtsfotos, så du kan sammenligne din krop over tid.</string>
+	<string>STRK bruger kameraet til fremskridtsfotos, så du kan sammenligne din krop over tid.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>STÆRK læser skridt, gang- og løbeafstand, aktiv energi, træningspas (herunder golf) og kropsvægt fra Apple Sundhed, så dagens aktivitet kan vises på oversigten.</string>
+	<string>STRK læser skridt, gang- og løbeafstand, aktiv energi, træningspas (herunder golf) og kropsvægt fra Apple Sundhed, så dagens aktivitet kan vises på oversigten.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>STÆRK gemmer styrketræning og kropsvægt i Apple Sundhed, så dine pas og din vægt hænger sammen med Fitness og Sundhed.</string>
+	<string>STRK gemmer styrke- og cirkeltræning samt kropsvægt i Apple Sundhed, så dine pas og din vægt hænger sammen med Fitness og Sundhed.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

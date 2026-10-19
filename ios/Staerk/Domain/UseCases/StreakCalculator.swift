@@ -46,4 +46,16 @@ enum StreakCalculator {
             }
         )
     }
+
+    static func trainingStreak(
+        today: String,
+        schedule: WeeklySchedule,
+        completedDateKeys: Set<String>
+    ) -> Int {
+        streak(
+            today: today,
+            applies: { schedule.workoutID(on: Dates.parse($0)) != nil },
+            isComplete: { completedDateKeys.contains($0) }
+        )
+    }
 }

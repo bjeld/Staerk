@@ -139,22 +139,56 @@ final class WorkoutRecord {
     var programID: String
     var name: String
     var sortOrder: Int
+    var kindRaw: String = "detailed"
+    var location: String = ""
+    var stationsBlob: Data = Data()
+    var targetRounds: Int?
+    var targetDurationMinutes: Int?
 
     init(from workout: WorkoutPlan) {
         id = workout.id
         programID = workout.programID
         name = workout.name
         sortOrder = workout.sortOrder
+        kindRaw = workout.kind.rawValue
+        location = workout.location
+        stationsBlob = Self.encodeStations(workout.stations)
+        targetRounds = workout.targetRounds
+        targetDurationMinutes = workout.targetDurationMinutes
     }
 
     func apply(_ workout: WorkoutPlan) {
         programID = workout.programID
         name = workout.name
         sortOrder = workout.sortOrder
+        kindRaw = workout.kind.rawValue
+        location = workout.location
+        stationsBlob = Self.encodeStations(workout.stations)
+        targetRounds = workout.targetRounds
+        targetDurationMinutes = workout.targetDurationMinutes
     }
 
     func asDomain() -> WorkoutPlan {
-        WorkoutPlan(id: id, programID: programID, name: name, sortOrder: sortOrder)
+        WorkoutPlan(
+            id: id,
+            programID: programID,
+            name: name,
+            sortOrder: sortOrder,
+            kind: WorkoutKind(rawValue: kindRaw) ?? .detailed,
+            location: location,
+            stations: Self.decodeStations(stationsBlob),
+            targetRounds: targetRounds,
+            targetDurationMinutes: targetDurationMinutes
+        )
+    }
+
+    private static func encodeStations(_ stations: [CircuitStation]) -> Data {
+        (try? JSONEncoder().encode(stations)) ?? Data()
+    }
+
+    private static func decodeStations(_ data: Data) -> [CircuitStation] {
+        guard !data.isEmpty else { return [] }
+        return (try? JSONDecoder().decode([CircuitStation].self, from: data)) ?? []
     }
 }
 
@@ -227,6 +261,10 @@ final class SessionRecord {
     var finishedAt: Date?
     var note: String?
     var exercisesBlob: Data
+    var kindRaw: String = "detailed"
+    var durationMinutes: Int?
+    var rounds: Int?
+    var effort: Int?
 
     var exercises: [SessionExerciseBlock] {
         get { (try? JSONDecoder().decode([SessionExerciseBlock].self, from: exercisesBlob)) ?? [] }
@@ -243,6 +281,10 @@ final class SessionRecord {
         finishedAt = session.finishedAt
         note = session.note
         exercisesBlob = (try? JSONEncoder().encode(session.exercises)) ?? Data()
+        kindRaw = session.kind.rawValue
+        durationMinutes = session.durationMinutes
+        rounds = session.rounds
+        effort = session.effort
     }
 
     func apply(_ session: SessionLog) {
@@ -254,6 +296,10 @@ final class SessionRecord {
         finishedAt = session.finishedAt
         note = session.note
         exercises = session.exercises
+        kindRaw = session.kind.rawValue
+        durationMinutes = session.durationMinutes
+        rounds = session.rounds
+        effort = session.effort
     }
 
     func asDomain() -> SessionLog {
@@ -266,7 +312,11 @@ final class SessionRecord {
             startedAt: startedAt,
             finishedAt: finishedAt,
             note: note,
-            exercises: exercises
+            exercises: exercises,
+            kind: WorkoutKind(rawValue: kindRaw) ?? .detailed,
+            durationMinutes: durationMinutes,
+            rounds: rounds,
+            effort: effort
         )
     }
 }

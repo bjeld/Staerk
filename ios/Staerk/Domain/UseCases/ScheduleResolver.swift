@@ -13,6 +13,30 @@ enum ScheduleResolver {
         return DayPlan(date: date, workout: nil)
     }
 
+    /// True when at least one weekday still points at a workout that exists.
+    static func hasLiveSchedule(schedule: WeeklySchedule, workouts: [WorkoutPlan]) -> Bool {
+        guard !workouts.isEmpty else { return false }
+        let ids = Set(workouts.map(\.id))
+        return schedule.workoutIDs.contains { id in
+            guard let id, !id.isEmpty else { return false }
+            return ids.contains(id)
+        }
+    }
+
+    static func status(
+        on date: Date,
+        schedule: WeeklySchedule,
+        workouts: [WorkoutPlan]
+    ) -> DayTrainingStatus {
+        guard hasLiveSchedule(schedule: schedule, workouts: workouts) else {
+            return .unconfigured
+        }
+        if let workout = plan(on: date, schedule: schedule, workouts: workouts).workout {
+            return .training(workout)
+        }
+        return .rest
+    }
+
     static func isTrainingDay(date: Date, schedule: WeeklySchedule) -> Bool {
         schedule.workoutID(on: date) != nil
     }

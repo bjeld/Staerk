@@ -1,6 +1,13 @@
 import Foundation
 
 enum HabitScoring {
+    /// Workout habits stay on the Habits tab so they can be edited, but they
+    /// should not dangle on Today after the last program/workout is deleted.
+    static func excludingDanglingWorkoutHabits(_ habits: [Habit], hasWorkouts: Bool) -> [Habit] {
+        guard !hasWorkouts else { return habits }
+        return habits.filter { $0.kind != .workout }
+    }
+
     static func isComplete(habit: Habit, entry: HabitEntry?, trained: Bool) -> Bool {
         switch habit.kind {
         case .boolean:

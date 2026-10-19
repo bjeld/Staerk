@@ -1,59 +1,45 @@
 import SwiftUI
 import UIKit
 
+/// Semantic colour tokens. Screens should reach for a role (`surface`, `inkSecondary`,
+/// `accentInk`) rather than a raw value so light and dark stay balanced.
 enum Palette {
-    static let bg = Color("StaerkBg")
-    static let elevated = Color("StaerkElevated")
-    static let volt = Color(hex: 0xC6FF00)
-    static let voltForeground = Color.black
-    static let ink = Color.primary
-    static let muted = Color(light: Color(hex: 0x3C3C43, alpha: 0.60), dark: Color(hex: 0xEBEBF5, alpha: 0.55))
-    static let hairline = Color(light: Color(hex: 0x3C3C43, alpha: 0.16), dark: Color(hex: 0x545458, alpha: 0.65))
-    static let fill = Color(light: Color(hex: 0x787880, alpha: 0.12), dark: Color(hex: 0x787880, alpha: 0.28))
-    static let fillStrong = Color(light: Color(hex: 0x787880, alpha: 0.20), dark: Color(hex: 0x787880, alpha: 0.40))
-    static let ringTrack = Color(light: Color(hex: 0x787880, alpha: 0.16), dark: Color.white.opacity(0.12))
-    static let danger = Color(hex: 0xFF453A)
-    static let blue = Color(hex: 0x0A84FF)
-}
+    // MARK: Surfaces
 
-enum Typeface {
-    static func display(_ size: CGFloat) -> Font {
-        Font.system(size: size, weight: .black, design: .default).width(.condensed)
-    }
+    static let canvas = Color("StaerkBg")
+    static let surface = Color("StaerkElevated")
+    static let surfaceInset = Color(light: Color(hex: 0x767680, alpha: 0.08), dark: Color(hex: 0xFFFFFF, alpha: 0.06))
+    static let surfaceInsetStrong = Color(light: Color(hex: 0x767680, alpha: 0.14), dark: Color(hex: 0xFFFFFF, alpha: 0.11))
+    static let stroke = Color(light: Color(hex: 0x000000, alpha: 0.06), dark: Color(hex: 0xFFFFFF, alpha: 0.07))
+    static let hairline = Color(light: Color(hex: 0x3C3C43, alpha: 0.12), dark: Color(hex: 0xFFFFFF, alpha: 0.09))
 
-    static func title(_ size: CGFloat) -> Font {
-        Font.system(size: size, weight: .heavy, design: .default).width(.condensed)
-    }
+    // MARK: Ink
 
-    static var hero: Font { display(56) }
-    static var screen: Font { display(34) }
-    static var card: Font { title(22) }
-    static var body: Font { .body }
-    static var caption: Font { .subheadline }
-}
+    static let ink = Color(light: Color(hex: 0x0B0B0C), dark: Color(hex: 0xF5F5F2))
+    static let inkSecondary = Color(light: Color(hex: 0x3C3C43, alpha: 0.66), dark: Color(hex: 0xEBEBF5, alpha: 0.62))
+    static let inkTertiary = Color(light: Color(hex: 0x3C3C43, alpha: 0.38), dark: Color(hex: 0xEBEBF5, alpha: 0.34))
 
-enum Haptics {
-    static func tap() {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-    }
+    // MARK: Accent
 
-    static func success() {
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
-    }
+    /// Signature cobalt. Used for fills: rings, primary buttons, completed states.
+    static let accent = Color(light: Color(hex: 0x2563FF), dark: Color(hex: 0x3B7BFF))
+    static let onAccent = Color.white
+    /// Accent that stays legible as text, icons and system tint in both appearances.
+    static let accentInk = Color(light: Color(hex: 0x1E54E6), dark: Color(hex: 0x76A6FF))
+    static let accentSoft = Color(light: Color(hex: 0x2563FF, alpha: 0.10), dark: Color(hex: 0x3B7BFF, alpha: 0.18))
 
-    static func warn() {
-        UINotificationFeedbackGenerator().notificationOccurred(.warning)
-    }
-}
+    // MARK: Data
 
-extension ThemeMode {
-    var preferredColorScheme: ColorScheme? {
-        switch self {
-        case .light: return .light
-        case .dark: return .dark
-        case .system: return nil
-        }
-    }
+    static let track = Color(light: Color(hex: 0x767680, alpha: 0.12), dark: Color(hex: 0xFFFFFF, alpha: 0.09))
+    static let energy = Color(hex: 0xFF5A36)
+    static let steps = Color(hex: 0xFF2D6F)
+    static let distance = Color(hex: 0x3FC7FF)
+    static let health = Color(hex: 0xFF375F)
+
+    // MARK: Feedback
+
+    static let danger = Color(light: Color(hex: 0xE5372C), dark: Color(hex: 0xFF5A4F))
+    static let link = Color(light: Color(hex: 0x0A6CFF), dark: Color(hex: 0x4DA3FF))
 }
 
 extension Color {
@@ -68,7 +54,7 @@ extension Color {
     }
 
     init(hexString: String) {
-        var cleaned = hexString.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        let cleaned = hexString.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         if cleaned.count == 3, let value = UInt32(cleaned, radix: 16) {
             let r = (value >> 8) & 0xF
             let g = (value >> 4) & 0xF
@@ -80,7 +66,7 @@ extension Color {
             self.init(hex: value)
             return
         }
-        self.init(hex: 0xC6FF00)
+        self.init(hex: 0x2563FF)
     }
 
     init(light: Color, dark: Color) {
@@ -90,15 +76,26 @@ extension Color {
             }
         )
     }
+
+    /// Darkens bright tints in light mode so they read as text or glyphs on white.
+    var legible: Color {
+        let base = UIColor(self)
+        return Color(uiColor: UIColor { trait in
+            guard trait.userInterfaceStyle != .dark else { return base }
+            var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            guard base.getHue(&h, saturation: &s, brightness: &b, alpha: &a) else { return base }
+            return UIColor(hue: h, saturation: min(1, s * 1.05), brightness: min(b, 0.62), alpha: a)
+        })
+    }
 }
 
 extension View {
-    func staerkCard() -> some View {
+    /// Lets body copy wrap to as many lines as Dynamic Type needs. Never ellipsizes.
+    func staerkWrappingText() -> some View {
         self
-            .background(Palette.elevated, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-    }
-
-    func staerkScreen() -> some View {
-        self.background(Palette.bg.ignoresSafeArea())
+            .multilineTextAlignment(.leading)
+            .lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
+

@@ -1,12 +1,14 @@
-import Charts
 import SwiftData
 import SwiftUI
 
 struct HabitsView: View {
+    var embedded = false
+
     @Query(sort: \HabitRecord.sortOrder) private var habitRows: [HabitRecord]
     @Query private var entryRows: [HabitEntryRecord]
     @Query(sort: \SessionRecord.dateKey) private var sessionRows: [SessionRecord]
     @Query private var exerciseRows: [ExerciseRecord]
+    @Query private var scheduleRows: [ScheduleRecord]
     @State private var cursor = Date()
     @State private var editor: Habit?
 
@@ -16,97 +18,61 @@ struct HabitsView: View {
     private var today: String { Dates.key() }
     private var week: [String] { Dates.weekKeys() }
     private var trainedDates: Set<String> { Set(sessions.filter(\.completed).map(\.dateKey)) }
+    private var schedule: WeeklySchedule { scheduleRows.first?.asDomain() ?? WeeklySchedule() }
+    private var showsCircuitProgress: Bool { sessions.contains(where: \.isCircuit) }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                StaerkHeader(title: L10n.string("habits.title"), subtitle: L10n.string("habits.subtitle"))
-
-                if habits.isEmpty {
-                    GroupedCard {
-                        Text(L10n.string("habits.empty"))
-                            .foregroundStyle(Palette.muted)
-                            .padding(16)
-                    }
-                } else {
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        ForEach(habits) { habit in
-                            let value = StreakCalculator.habitStreak(
-                                habit: habit,
-                                entries: entries.filter { $0.habitID == habit.id },
-                                sessions: sessions,
-                                today: today
-                            )
-                            GroupedCard {
-                                VStack(spacing: 8) {
-                                    ProgressRingView(
-                                        value: Double(min(value, 14)),
-                                        maxValue: 14,
-                                        color: Color(hexString: habit.tintHex),
-                                        label: "\(value)",
-                                        sub: L10n.string("habits.days")
-                                    )
-                                    Text(habit.name)
-                                        .font(.footnote.weight(.semibold))
-                                        .lineLimit(1)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(12)
-                            }
-                        }
-                    }
-                    weekCard
-                    muscleVolume
-                    calendar
-                }
-
-                PrimaryButton(title: L10n.string("habits.add")) {
-                    editor = Habit(
-                        name: "",
-                        kind: .boolean,
-                        symbol: "checkmark.circle.fill",
-                        sortOrder: (habits.map(\.sortOrder).max() ?? -1) + 1
-                    )
-                }
-
-                if !habits.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        SectionLabel(text: L10n.string("habits.manage"))
-                        GroupedCard {
-                            ForEach(Array(habits.enumerated()), id: \.element.id) { index, habit in
-                                HStack {
-                                    SymbolCircle(symbol: habit.symbol, tint: Color(hexString: habit.tintHex), size: 32)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(habit.name)
-                                        Text(habit.kind.localizedName)
-                                            .font(.footnote)
-                                            .foregroundStyle(Palette.muted)
-                                    }
-                                    Spacer()
-                                    Button(L10n.string("common.edit")) { editor = habit }
-                                        .font(.subheadline.weight(.semibold))
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 12)
-                                if index < habits.count - 1 {
-                                    Divider().overlay(Palette.hairline).padding(.leading, 16)
-                                }
-                            }
-                        }
-                    }
+        Screen {
+            ScreenHeader(title: L10n.string("habits.title"), subtitle: L10n.string("habits.subtitle")) {
+                IconButton(symbol: "plus", label: L10n.string("habits.add"), filled: true) {
+                    addHabit()
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 28)
+
+            if habits.isEmpty {
+                Card {
+                    EmptyState(symbol: "sparkles", message: L10n.string("habits.empty"))
+                        .padding(-Space.l)
+                        .padding(.bottom, Space.l)
+                    PrimaryButton(title: L10n.string("habits.add"), symbol: "plus") {
+                        addHabit()
+                    }
+                }
+            } else {
+                weekCard
+                habitList
+                if showsCircuitProgress {
+                    CircuitProgressCard(
+                        summary: CircuitProgress.summary(
+                            sessions: sessions,
+                            schedule: schedule,
+                            today: today,
+                            weekKeys: week
+                        )
+                    )
+                }
+                muscleVolume
+                calendar
+            }
         }
-        .staerkKeyboard()
-        .background(Palette.bg.ignoresSafeArea())
+        .navigationTitle(embedded ? "" : L10n.string("habits.title"))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(embedded ? .automatic : .hidden, for: .navigationBar)
         .sheet(item: $editor) { habit in
             HabitEditorView(habit: habit)
         }
     }
+
+    private func addHabit() {
+        editor = Habit(
+            name: "",
+            kind: .boolean,
+            symbol: "checkmark.circle.fill",
+            sortOrder: (habits.map(\.sortOrder).max() ?? -1) + 1
+        )
+    }
+
+    // MARK: Week
 
     private var weekCard: some View {
         let score = HabitScoring.weekCompletedCount(
@@ -115,40 +81,123 @@ struct HabitsView: View {
             trainedDates: trainedDates,
             week: week
         )
-        return GroupedCard {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text(L10n.string("habits.thisweek"))
-                        .font(Typeface.card)
-                    Spacer()
-                    Text("\(score.done)/\(score.total)")
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(Palette.muted)
-                }
-                ForEach(Array(week.enumerated()), id: \.offset) { index, key in
-                    let ratio = HabitScoring.dayRatio(
-                        habits: habits,
-                        entries: entries.filter { $0.dateKey == key },
-                        trained: trainedDates.contains(key),
-                        dateKey: key
-                    )
-                    HStack {
-                        Text(key == today
-                             ? L10n.format("habits.today.row", L10n.string(WeekdayLabel.shortKeys[index]))
-                             : L10n.string(WeekdayLabel.shortKeys[index]))
-                            .fontWeight(key == today ? .semibold : .regular)
-                        Spacer()
-                        Text("\(Int((ratio * 100).rounded()))%")
-                            .font(Typeface.title(16))
-                            .foregroundStyle(ratio >= 1 ? Palette.volt : Palette.muted)
+        let ratios = week.map { key in
+            HabitScoring.dayRatio(
+                habits: habits,
+                entries: entries.filter { $0.dateKey == key },
+                trained: trainedDates.contains(key),
+                dateKey: key
+            )
+        }
+        let percent = score.total > 0 ? Int((Double(score.done) / Double(score.total) * 100).rounded()) : 0
+        return Card(padding: Space.xl) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: Space.xs) {
+                    Eyebrow(text: L10n.string("habits.thisweek"))
+                    HStack(alignment: .firstTextBaseline, spacing: 2) {
+                        Text("\(score.done)")
+                            .font(Typeface.hero)
+                            .monospacedDigit()
+                            .foregroundStyle(Palette.ink)
+                            .contentTransition(.numericText(value: Double(score.done)))
+                        Text(verbatim: "/\(score.total)")
+                            .font(Typeface.title(24))
+                            .monospacedDigit()
+                            .foregroundStyle(Palette.inkTertiary)
                     }
-                    .font(.body)
+                    Text(L10n.string("habits.week.caption"))
+                        .font(.subheadline)
+                        .foregroundStyle(Palette.inkSecondary)
                 }
+                Spacer()
+                Pill(text: "\(percent)%", tint: Palette.accent, filled: percent >= 100)
             }
-            .padding(16)
+            WeekBars(values: ratios, todayIndex: week.firstIndex(of: today))
+                .padding(.top, Space.xl)
         }
     }
 
+    // MARK: Habit list
+
+    private var habitList: some View {
+        TitledSection(title: L10n.string("habits.manage")) {
+            Card(padding: 0) {
+                ForEach(Array(habits.enumerated()), id: \.element.id) { index, habit in
+                    Button {
+                        editor = habit
+                    } label: {
+                        habitRow(habit)
+                    }
+                    .buttonStyle(.pressable)
+                    .accessibilityHint(L10n.string("common.edit"))
+                    if index < habits.count - 1 {
+                        RowDivider(inset: 70)
+                    }
+                }
+            }
+        }
+    }
+
+    private func habitRow(_ habit: Habit) -> some View {
+        let habitEntries = entries.filter { $0.habitID == habit.id }
+        let streak = StreakCalculator.habitStreak(
+            habit: habit,
+            entries: habitEntries,
+            sessions: sessions,
+            today: today
+        )
+        let byDay = Dictionary(uniqueKeysWithValues: habitEntries.map { ($0.dateKey, $0) })
+        let tint = Color(hexString: habit.tintHex)
+        return HStack(spacing: Space.m) {
+            IconBadge(symbol: habit.symbol, tint: tint, size: 42)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(habit.name)
+                    .font(Typeface.rowTitle)
+                    .foregroundStyle(Palette.ink)
+                    .staerkWrappingText()
+                HStack(spacing: Space.xs) {
+                    Image(systemName: "flame.fill")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(streak > 0 ? Palette.energy : Palette.inkTertiary)
+                    Text(verbatim: "\(streak)")
+                        .font(.subheadline.weight(.bold).monospacedDigit())
+                        .foregroundStyle(streak > 0 ? Palette.ink : Palette.inkTertiary)
+                    Text(L10n.string("habits.streak.caption"))
+                        .font(.subheadline)
+                        .foregroundStyle(Palette.inkSecondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 5) {
+                ForEach(week, id: \.self) { key in
+                    let applies = habit.applies(onKey: key)
+                    let done = applies && HabitScoring.isComplete(habit: habit, entry: byDay[key], trained: trainedDates.contains(key))
+                    Circle()
+                        .fill(done ? tint : (applies ? Palette.track : Color.clear))
+                        .overlay {
+                            if !applies {
+                                Circle().strokeBorder(Palette.track, lineWidth: 1.5)
+                            }
+                        }
+                        .overlay {
+                            if key == today {
+                                Circle().strokeBorder(Palette.ink.opacity(done ? 0 : 0.5), lineWidth: 1.5)
+                            }
+                        }
+                        .frame(width: 9, height: 9)
+                }
+            }
+            .accessibilityHidden(true)
+        }
+        .padding(.horizontal, Space.l)
+        .padding(.vertical, Space.m + 1)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: Volume
+
+    @ViewBuilder
     private var muscleVolume: some View {
         let muscleMap = Dictionary(uniqueKeysWithValues: exerciseRows.map { ($0.id, MuscleGroup(rawValue: $0.muscleGroupRaw) ?? .legs) })
         let volume = ProgressionCalculator.weeklySetVolume(
@@ -159,54 +208,45 @@ struct HabitsView: View {
         )
         let data = MuscleGroup.allCases.map { MuscleVolume(id: $0.rawValue, name: $0.localizedName, sets: volume[$0] ?? 0) }
         let empty = data.allSatisfy { $0.sets == 0 }
-
-        return VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(text: L10n.string("habits.volume"))
-            GroupedCard {
-                if empty {
-                    Text(L10n.string("habits.volume.empty"))
-                        .foregroundStyle(Palette.muted)
-                        .padding(16)
-                } else {
-                    Chart(data) { item in
-                        BarMark(x: .value("M", item.name), y: .value("S", item.sets))
-                            .foregroundStyle(Palette.volt)
+        let total = data.reduce(0) { $0 + $1.sets }
+        if empty && showsCircuitProgress {
+            EmptyView()
+        } else {
+            TitledSection(title: L10n.string("habits.volume"), detail: empty ? nil : "\(total)") {
+                Card(padding: empty ? 0 : Space.xl) {
+                    if empty {
+                        EmptyState(symbol: "chart.bar", message: L10n.string("habits.volume.empty"))
+                    } else {
+                        BarList(items: data.map { BarListItem(id: $0.id, label: $0.name, value: $0.sets) })
                     }
-                    .frame(height: 180)
-                    .padding(16)
                 }
             }
         }
     }
 
+    // MARK: Calendar
+
     private var calendar: some View {
         let cells = Dates.monthGrid(cursor)
         let grouped = Dictionary(grouping: entries, by: \.dateKey)
-        return GroupedCard {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Button { cursor = Dates.calendar.date(byAdding: .month, value: -1, to: cursor) ?? cursor } label: {
-                        Image(systemName: "chevron.left").frame(width: 44, height: 44)
-                    }
-                    Spacer()
-                    Text(Dates.monthTitle(cursor)).font(.headline)
-                    Spacer()
-                    Button { cursor = Dates.calendar.date(byAdding: .month, value: 1, to: cursor) ?? cursor } label: {
-                        Image(systemName: "chevron.right").frame(width: 44, height: 44)
-                    }
-                }
-                .foregroundStyle(.primary)
-
-                HStack {
+        return TitledSection(title: Dates.monthTitle(cursor)) {
+            HStack(spacing: Space.xs) {
+                monthButton("chevron.left", offset: -1)
+                monthButton("chevron.right", offset: 1)
+            }
+        } content: {
+            Card(padding: Space.l) {
+                HStack(spacing: 6) {
                     ForEach(WeekdayLabel.shortKeys, id: \.self) { key in
-                        Text(L10n.string(key))
-                            .font(.caption2)
-                            .foregroundStyle(Palette.muted)
+                        Text(String(L10n.string(key).prefix(1)).uppercased())
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(Palette.inkTertiary)
                             .frame(maxWidth: .infinity)
                     }
                 }
+                .padding(.bottom, Space.s)
 
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 7), spacing: 6) {
                     ForEach(Array(cells.enumerated()), id: \.offset) { _, key in
                         if let key {
                             let ratio = HabitScoring.dayRatio(
@@ -215,25 +255,49 @@ struct HabitsView: View {
                                 trained: trainedDates.contains(key),
                                 dateKey: key
                             )
-                            Text(dayNumber(key))
-                                .font(.caption.weight(.bold))
-                                .frame(maxWidth: .infinity)
-                                .aspectRatio(1, contentMode: .fit)
-                                .background(Palette.volt.opacity(ratio == 0 ? 0.08 : 0.15 + ratio * 0.7), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .overlay {
-                                    if key == today {
-                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                            .stroke(Color.primary, lineWidth: 2)
-                                    }
-                                }
+                            heatCell(key: key, ratio: ratio)
                         } else {
                             Color.clear.aspectRatio(1, contentMode: .fit)
                         }
                     }
                 }
             }
-            .padding(16)
         }
+    }
+
+    private func monthButton(_ symbol: String, offset: Int) -> some View {
+        Button {
+            Haptics.selection()
+            withAnimation(Motion.snappy) {
+                cursor = Dates.calendar.date(byAdding: .month, value: offset, to: cursor) ?? cursor
+            }
+        } label: {
+            CircleIcon(symbol: symbol, size: 32, tint: Palette.inkSecondary)
+        }
+        .buttonStyle(PressableStyle(scale: 0.9))
+        .frame(width: 36)
+    }
+
+    private func heatCell(key: String, ratio: Double) -> some View {
+        let isFuture = key > today
+        let strong = ratio >= 0.6
+        return RoundedRectangle(cornerRadius: 9, style: .continuous)
+            .fill(ratio > 0 ? Palette.accent.opacity(0.22 + ratio * 0.78) : Palette.surfaceInset)
+            .aspectRatio(1, contentMode: .fit)
+            .overlay {
+                Text(dayNumber(key))
+                    .font(.caption.weight(.bold).monospacedDigit())
+                    .foregroundStyle(isFuture ? Palette.inkTertiary : (strong ? Palette.onAccent : Palette.ink))
+                    .fixedSize()
+            }
+            .overlay {
+                if key == today {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .strokeBorder(Palette.ink, lineWidth: 1.5)
+                }
+            }
+            .accessibilityLabel(Dates.prettyLong(key: key))
+            .accessibilityValue("\(Int((ratio * 100).rounded()))%")
     }
 
     private func dayNumber(_ key: String) -> String {
@@ -262,6 +326,22 @@ struct HabitEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    HStack(spacing: Space.m) {
+                        IconBadge(symbol: habit.symbol, tint: Color(hexString: habit.tintHex), size: 52, style: .solid)
+                        VStack(alignment: .leading, spacing: Space.xxs) {
+                            Text(habit.name.isEmpty ? L10n.string("habit.new") : habit.name)
+                                .font(Typeface.cardTitle)
+                                .foregroundStyle(habit.name.isEmpty ? Palette.inkTertiary : Palette.ink)
+                                .lineLimit(1)
+                            Text(habit.kind.localizedName)
+                                .font(.subheadline)
+                                .foregroundStyle(Palette.inkSecondary)
+                        }
+                    }
+                    .padding(.vertical, Space.xs)
+                    .animation(Motion.snappy, value: habit.symbol)
+                }
                 Section(L10n.string("habit.section.identity")) {
                     TextField(L10n.string("habit.name"), text: $habit.name)
                     Picker(L10n.string("habit.kind"), selection: $habit.kind) {
@@ -277,6 +357,7 @@ struct HabitEditorView: View {
                 }
                 Section(L10n.string("habit.section.schedule")) {
                     WeekdayPicker(selection: $habit.weekdays)
+                        .padding(.vertical, Space.xs)
                 }
                 Section(L10n.string("habit.section.reminder")) {
                     Toggle(L10n.string("habit.reminder"), isOn: $habit.reminderEnabled)
@@ -296,7 +377,7 @@ struct HabitEditorView: View {
                     }
                 }
             }
-            .staerkKeyboardImmediate()
+            .staerkFormKeyboard()
             .staerkKeyboardDone()
             .navigationTitle(habit.name.isEmpty ? L10n.string("habit.new") : L10n.string("habit.edit"))
             .navigationBarTitleDisplayMode(.inline)

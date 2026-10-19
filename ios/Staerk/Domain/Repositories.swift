@@ -94,6 +94,6 @@ protocol HealthServing: AnyObject {
 
     func requestAccess() async
     func refreshToday() async
-    func saveStrengthWorkout(start: Date, end: Date) async
+    func saveWorkout(kind: WorkoutKind, start: Date, end: Date) async
     func saveBodyMass(kg: Double, at date: Date) async
 }

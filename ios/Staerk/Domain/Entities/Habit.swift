@@ -20,7 +20,7 @@ struct Habit: Identifiable, Hashable, Codable, Sendable {
         name: String,
         kind: HabitKind,
         symbol: String,
-        tintHex: String = "C6FF00",
+        tintHex: String = "2563FF",
         weekdays: WeekdaySet = .all,
         goal: Int = 1,
         reminderEnabled: Bool = false,

@@ -33,6 +33,30 @@ enum LogType: String, Codable, CaseIterable, Identifiable, Hashable {
     var localizationKey: String { "logtype.\(rawValue)" }
 }
 
+enum WorkoutKind: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
+    case detailed
+    case circuit
+
+    var id: String { rawValue }
+
+    var localizationKey: String { "workout.kind.\(rawValue)" }
+
+    var isCircuit: Bool { self == .circuit }
+}
+
+enum EffortRating {
+    static let range = 1...5
+
+    static func clamped(_ value: Int?) -> Int? {
+        guard let value, range.contains(value) else { return nil }
+        return value
+    }
+
+    static func localizationKey(_ value: Int) -> String {
+        "effort.\(value)"
+    }
+}
+
 enum ThemeMode: String, Codable, CaseIterable, Identifiable, Hashable {
     case light
     case dark
