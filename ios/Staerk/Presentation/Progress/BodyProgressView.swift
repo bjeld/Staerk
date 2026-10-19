@@ -189,7 +189,10 @@ struct BodyProgressView: View {
                     .padding(16)
                 }
             } else {
-                Text(L10n.string("body.photos.hint")).font(.subheadline).foregroundStyle(Palette.muted)
+                Text(L10n.string("body.photos.hint"))
+                    .font(.subheadline)
+                    .foregroundStyle(Palette.muted)
+                    .staerkWrappingText()
             }
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {

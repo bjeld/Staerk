@@ -12,6 +12,8 @@ enum StoreBootstrap {
         do {
             let container = try ModelContainer(for: schema, configurations: [configuration])
             migrateIfNeeded(into: container.mainContext)
+            migrateCircuitProgramsIfNeeded(into: container.mainContext)
+            refreshDefaultHabitNotesIfNeeded(into: container.mainContext)
             return container
         } catch {
             fatalError("SwiftData could not open: \(error)")
@@ -138,7 +140,13 @@ enum StoreBootstrap {
         let workoutB = packed.workouts.dropFirst().first ?? packed.workouts.first
         var exerciseIDMap: [String: String] = [:]
 
-        if snapshot.exercises.isEmpty {
+        // LOOP circuit has no per-exercise definitions. Keep historical names on
+        // the session blocks instead of attaching old A/B lifts to the circuit.
+        if packed.workouts.contains(where: \.isCircuit) {
+            for dto in snapshot.exercises {
+                exerciseIDMap[dto.id] = dto.id
+            }
+        } else if snapshot.exercises.isEmpty {
             for exercise in packed.exercises {
                 context.insert(ExerciseRecord(from: exercise))
             }
@@ -195,6 +203,7 @@ enum StoreBootstrap {
         }
 
         let exerciseLookup = Dictionary(uniqueKeysWithValues: snapshot.exercises.map { ($0.id, $0) })
+        let usesCircuit = packed.workouts.contains(where: \.isCircuit)
         for session in snapshot.sessions {
             let workout = session.workoutRaw == "B" ? workoutB : workoutA
             let blocks = session.exercises.map { block -> SessionExerciseBlock in
@@ -207,16 +216,20 @@ enum StoreBootstrap {
                     sets: block.sets
                 )
             }
+            let historicalName = session.workoutRaw == "B"
+                ? String(localized: "template.workout.b")
+                : String(localized: "template.workout.a")
             let log = SessionLog(
                 id: session.id,
                 dateKey: session.dateKey,
-                workoutID: workout?.id ?? session.workoutRaw,
-                workoutName: workout?.name ?? session.workoutRaw,
+                workoutID: usesCircuit ? "legacy_\(session.workoutRaw)" : (workout?.id ?? session.workoutRaw),
+                workoutName: usesCircuit ? historicalName : (workout?.name ?? session.workoutRaw),
                 completed: session.completed,
                 startedAt: session.startedAt,
                 finishedAt: session.finishedAt,
                 note: session.note,
-                exercises: blocks
+                exercises: blocks,
+                kind: .detailed
             )
             context.insert(SessionRecord(from: log))
             if session.completed {
@@ -254,6 +267,82 @@ enum StoreBootstrap {
         guard boolValue || count > 0 else { return }
         let entry = HabitEntry(habitID: habitID, dateKey: dateKey, boolValue: boolValue, countValue: count)
         context.insert(HabitEntryRecord(from: entry))
+    }
+
+    static func migrateCircuitProgramsIfNeeded(into context: ModelContext) {
+        let programs = (try? context.fetch(FetchDescriptor<ProgramRecord>())) ?? []
+        var changed = false
+        for record in programs {
+            let program = record.asDomain()
+            let key = program.id
+            let workouts = ((try? context.fetch(
+                FetchDescriptor<WorkoutRecord>(predicate: #Predicate { $0.programID == key })
+            )) ?? []).map { $0.asDomain() }
+            guard CircuitMigration.shouldConvert(program: program, workouts: workouts) else { continue }
+            convertToLoopCircuit(program: record, into: context)
+            changed = true
+        }
+        if changed {
+            try? context.save()
+        }
+    }
+
+    static func refreshDefaultHabitNotesIfNeeded(into context: ModelContext) {
+        let rows = (try? context.fetch(FetchDescriptor<HabitRecord>())) ?? []
+        var changed = false
+        for row in rows {
+            let habit = row.asDomain()
+            let updated = HabitCatalog.refreshedNotes(habit)
+            if updated.notes != habit.notes {
+                row.apply(updated)
+                changed = true
+            }
+        }
+        if changed {
+            try? context.save()
+        }
+    }
+
+    private static func convertToLoopCircuit(program: ProgramRecord, into context: ModelContext) {
+        let blueprint = program.templateID == CircuitMigration.loopTemplateID
+            ? ProgramCatalog.loop
+            : ProgramCatalog.martin
+        let packed = ProgramCatalog.materialize(
+            blueprint,
+            programID: program.id,
+            name: program.name
+        )
+        program.apply(packed.program)
+
+        let key = program.id
+        let existingWorkouts = (try? context.fetch(
+            FetchDescriptor<WorkoutRecord>(predicate: #Predicate { $0.programID == key })
+        )) ?? []
+        for workout in existingWorkouts {
+            let workoutID = workout.id
+            let exercises = (try? context.fetch(
+                FetchDescriptor<ExerciseRecord>(predicate: #Predicate { $0.workoutID == workoutID })
+            )) ?? []
+            for exercise in exercises {
+                context.delete(exercise)
+            }
+            context.delete(workout)
+        }
+
+        for workout in packed.workouts {
+            context.insert(WorkoutRecord(from: workout))
+        }
+        for exercise in packed.exercises {
+            context.insert(ExerciseRecord(from: exercise))
+        }
+
+        var descriptor = FetchDescriptor<ScheduleRecord>()
+        descriptor.fetchLimit = 1
+        if let schedule = try? context.fetch(descriptor).first {
+            schedule.apply(packed.schedule)
+        } else {
+            context.insert(ScheduleRecord(schedule: packed.schedule))
+        }
     }
 }
 

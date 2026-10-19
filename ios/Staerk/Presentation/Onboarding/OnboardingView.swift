@@ -13,7 +13,7 @@ struct OnboardingView: View {
         HabitCatalog.alcoholFree.id,
         HabitCatalog.workout.id
     ]
-    @State private var programID: String = ProgramCatalog.fullBody.id
+    @State private var programID: String = ProgramCatalog.loop.id
     @State private var saving = false
 
     private var templates: [HabitTemplate] { HabitCatalog.all }
@@ -82,6 +82,7 @@ struct OnboardingView: View {
             Text(L10n.string("onboarding.welcome.body"))
                 .font(.body)
                 .foregroundStyle(Palette.muted)
+                .staerkWrappingText()
             Spacer()
         }
         .padding(24)
@@ -145,11 +146,13 @@ struct OnboardingView: View {
                                 Text(L10n.string(template.nameKey))
                                     .font(.body.weight(.semibold))
                                     .foregroundStyle(.primary)
-                                Text(L10n.string(template.kind.localizationKey))
+                                    .staerkWrappingText()
+                                Text(L10n.string(template.notesKey))
                                     .font(.footnote)
                                     .foregroundStyle(Palette.muted)
+                                    .staerkWrappingText()
                             }
-                            Spacer()
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             Image(systemName: on ? "checkmark.circle.fill" : "circle")
                                 .font(.title2)
                                 .foregroundStyle(on ? Palette.volt : Palette.muted)
@@ -185,10 +188,13 @@ struct OnboardingView: View {
                                 Image(systemName: on ? "checkmark.circle.fill" : "circle")
                                     .foregroundStyle(on ? Palette.volt : Palette.muted)
                             }
+                            Text((program.workouts.first?.kind ?? .detailed).localizedName)
+                                .font(.footnote.weight(.bold))
+                                .foregroundStyle(Palette.volt)
                             Text(ProgramCatalog.localizedNotes(program))
                                 .font(.footnote)
                                 .foregroundStyle(Palette.muted)
-                                .multilineTextAlignment(.leading)
+                                .staerkWrappingText()
                         }
                         .padding(16)
                         .background(Palette.elevated, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -220,6 +226,7 @@ struct OnboardingView: View {
                 .font(Typeface.screen)
             Text(L10n.string("onboarding.done.body"))
                 .foregroundStyle(Palette.muted)
+                .staerkWrappingText()
             Spacer()
         }
         .padding(24)

@@ -101,4 +101,35 @@ extension View {
     func staerkScreen() -> some View {
         self.background(Palette.bg.ignoresSafeArea())
     }
+
+    /// Lets body copy wrap to as many lines as Dynamic Type needs. Never ellipsizes.
+    func staerkWrappingText() -> some View {
+        self
+            .multilineTextAlignment(.leading)
+            .lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+enum HexContrast {
+    static func isLight(_ hex: String) -> Bool {
+        var cleaned = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        if cleaned.count == 3, let value = UInt32(cleaned, radix: 16) {
+            let r = Double((value >> 8) & 0xF) / 15
+            let g = Double((value >> 4) & 0xF) / 15
+            let b = Double(value & 0xF) / 15
+            return (0.299 * r + 0.587 * g + 0.114 * b) > 0.65
+        }
+        if cleaned.count == 6, let value = UInt32(cleaned, radix: 16) {
+            let r = Double((value >> 16) & 0xFF) / 255
+            let g = Double((value >> 8) & 0xFF) / 255
+            let b = Double(value & 0xFF) / 255
+            return (0.299 * r + 0.587 * g + 0.114 * b) > 0.65
+        }
+        return true
+    }
+
+    static func foreground(onHex hex: String) -> Color {
+        isLight(hex) ? Color.black.opacity(0.85) : Color.white
+    }
 }

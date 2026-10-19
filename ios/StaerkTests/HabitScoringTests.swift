@@ -33,4 +33,50 @@ final class HabitScoringTests: XCTestCase {
         XCTAssertEqual(score.total, 7)
         XCTAssertEqual(score.done, 3)
     }
+
+    func testRefreshesLegacyDefaultNotes() {
+        var habit = HabitCatalog.make(.creatine, sortOrder: 0)
+        habit.notes = "5 g med morgenkaffen eller efter træning"
+        let updated = HabitCatalog.refreshedNotes(habit)
+        XCTAssertEqual(updated.notes, HabitCatalog.defaultNotes(for: "tmpl_creatine"))
+        XCTAssertNotEqual(updated.notes, habit.notes)
+    }
+
+    func testLeavesCustomHabitNotesAlone() {
+        var habit = HabitCatalog.make(.creatine, sortOrder: 0)
+        habit.notes = "Min egen note"
+        XCTAssertEqual(HabitCatalog.refreshedNotes(habit).notes, "Min egen note")
+    }
+
+    func testDoesNotRefreshUnknownTemplate() {
+        let habit = Habit(name: "Custom", kind: .boolean, symbol: "star", notes: "5 g med morgenkaffen eller efter træning")
+        XCTAssertEqual(HabitCatalog.refreshedNotes(habit).notes, habit.notes)
+    }
+
+    func testHidesWorkoutHabitsWhenNoWorkoutsExist() {
+        let workout = Habit(id: "t", name: "Train", kind: .workout, symbol: "dumbbell.fill")
+        let water = Habit(id: "w", name: "Water", kind: .counter, symbol: "drop.fill", goal: 8)
+        let hidden = HabitScoring.excludingDanglingWorkoutHabits([workout, water], hasWorkouts: false)
+        XCTAssertEqual(hidden.map(\.id), ["w"])
+        XCTAssertEqual(
+            HabitScoring.excludingDanglingWorkoutHabits([workout, water], hasWorkouts: true).map(\.id),
+            ["t", "w"]
+        )
+    }
+
+    func testDayRatioIgnoresDanglingWorkoutHabits() {
+        let workout = Habit(id: "t", name: "Train", kind: .workout, symbol: "dumbbell.fill", weekdays: .all)
+        let water = Habit(id: "w", name: "Water", kind: .boolean, symbol: "drop.fill", weekdays: .all)
+        let monday = "2026-10-12"
+        let entries = [HabitEntry(habitID: "w", dateKey: monday, boolValue: true)]
+        let visible = HabitScoring.excludingDanglingWorkoutHabits([workout, water], hasWorkouts: false)
+        XCTAssertEqual(
+            HabitScoring.dayRatio(habits: visible, entries: entries, trained: false, dateKey: monday),
+            1
+        )
+        XCTAssertEqual(
+            HabitScoring.dayRatio(habits: [workout, water], entries: entries, trained: false, dateKey: monday),
+            0.5
+        )
+    }
 }

@@ -27,6 +27,7 @@ struct HealthWorkoutSummary: Identifiable, Equatable, Hashable, Sendable {
         case walking
         case running
         case strength
+        case circuit
         case other
 
         var titleKey: String { "health.kind.\(rawValue)" }
@@ -37,6 +38,7 @@ struct HealthWorkoutSummary: Identifiable, Equatable, Hashable, Sendable {
             case .walking: return "figure.walk"
             case .running: return "figure.run"
             case .strength: return "dumbbell.fill"
+            case .circuit: return "arrow.triangle.2.circlepath"
             case .other: return "heart.fill"
             }
         }
