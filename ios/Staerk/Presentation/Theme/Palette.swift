@@ -88,3 +88,14 @@ extension Color {
         })
     }
 }
+
+extension View {
+    /// Lets body copy wrap to as many lines as Dynamic Type needs. Never ellipsizes.
+    func staerkWrappingText() -> some View {
+        self
+            .multilineTextAlignment(.leading)
+            .lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+

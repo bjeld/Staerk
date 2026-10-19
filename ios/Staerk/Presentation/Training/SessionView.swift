@@ -18,6 +18,10 @@ struct SessionView: View {
     @State private var startedAt = Date()
     @State private var saving = false
     @State private var didLoad = false
+    @State private var durationMinutes: Double = 30
+    @State private var rounds: Double = 2
+    @State private var effort: Int?
+    @State private var note = ""
 
     private var settings: UserSettings { settingsRows.first?.asDomain() ?? UserSettings() }
     private var workouts: [WorkoutPlan] { workoutRows.map { $0.asDomain() } }
@@ -27,7 +31,7 @@ struct SessionView: View {
         workouts.first { $0.id == workoutID } ?? ScheduleResolver.pickWorkout(schedule: schedule, workouts: workouts, sessions: sessions)
     }
     private var plan: [ExerciseDefinition] {
-        guard let resolved else { return [] }
+        guard let resolved, !resolved.isCircuit else { return [] }
         return exerciseRows.filter { $0.workoutID == resolved.id }.map { $0.asDomain() }
     }
     private var doneSets: Int { blocks.reduce(0) { $0 + $1.sets.filter(\.done).count } }
@@ -38,15 +42,18 @@ struct SessionView: View {
             VStack(alignment: .leading, spacing: Space.l) {
                 ScreenHeader(
                     eyebrow: Dates.prettyLong(Date()),
-                    title: resolved?.name ?? L10n.string("session.title")
+                    title: resolved?.name ?? L10n.string("session.title"),
+                    subtitle: sessionSubtitle
                 )
-                VStack(alignment: .leading, spacing: Space.s) {
-                    LinearProgress(progress: totalSets > 0 ? Double(doneSets) / Double(totalSets) : 0, height: 8)
-                    Text(L10n.format("session.subtitle", doneSets, totalSets))
-                        .font(.footnote.weight(.medium).monospacedDigit())
-                        .foregroundStyle(Palette.inkSecondary)
-                        .contentTransition(.numericText(value: Double(doneSets)))
-                        .animation(Motion.snappy, value: doneSets)
+                if resolved?.isCircuit != true {
+                    VStack(alignment: .leading, spacing: Space.s) {
+                        LinearProgress(progress: totalSets > 0 ? Double(doneSets) / Double(totalSets) : 0, height: 8)
+                        Text(L10n.format("session.subtitle", doneSets, totalSets))
+                            .font(.footnote.weight(.medium).monospacedDigit())
+                            .foregroundStyle(Palette.inkSecondary)
+                            .contentTransition(.numericText(value: Double(doneSets)))
+                            .animation(Motion.snappy, value: doneSets)
+                    }
                 }
             }
 
@@ -62,9 +69,20 @@ struct SessionView: View {
                 .pickerStyle(.segmented)
             }
 
-            ForEach(plan) { exercise in
-                if let index = blocks.firstIndex(where: { $0.exerciseId == exercise.id }) {
-                    exerciseCard(exercise: exercise, blockIndex: index)
+            if let resolved, resolved.isCircuit {
+                CircuitLogCard(
+                    workout: resolved,
+                    last: CircuitProgress.lastCircuit(in: sessions, workoutID: resolved.id),
+                    durationMinutes: $durationMinutes,
+                    rounds: $rounds,
+                    effort: $effort,
+                    note: $note
+                )
+            } else {
+                ForEach(plan) { exercise in
+                    if let index = blocks.firstIndex(where: { $0.exerciseId == exercise.id }) {
+                        exerciseCard(exercise: exercise, blockIndex: index)
+                    }
                 }
             }
         }
@@ -75,18 +93,33 @@ struct SessionView: View {
         .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: loadIfNeeded)
         .onChange(of: exerciseRows.count) { _, _ in loadIfNeeded() }
+        .onChange(of: workoutRows.count) { _, _ in loadIfNeeded() }
+    }
+
+    private var sessionSubtitle: String? {
+        guard let resolved, resolved.isCircuit else { return nil }
+        if resolved.trimmedLocation.isEmpty {
+            return L10n.string("session.circuit.subtitle")
+        }
+        return resolved.trimmedLocation
     }
 
     private var actionBar: some View {
         VStack(spacing: Space.xs) {
-            PrimaryButton(title: L10n.string("session.finish"), symbol: "checkmark", enabled: !saving) {
-                Task { await complete(done: true) }
+            if resolved?.isCircuit == true {
+                PrimaryButton(title: L10n.string("session.circuit.done"), symbol: "checkmark", enabled: !saving) {
+                    Task { await completeCircuit() }
+                }
+            } else {
+                PrimaryButton(title: L10n.string("session.finish"), symbol: "checkmark", enabled: !saving) {
+                    Task { await completeDetailed(done: true) }
+                }
+                Button(L10n.string("session.draft")) {
+                    Task { await completeDetailed(done: false) }
+                }
+                .buttonStyle(.staerk(.quiet, compact: true))
+                .disabled(saving)
             }
-            Button(L10n.string("session.draft")) {
-                Task { await complete(done: false) }
-            }
-            .buttonStyle(.staerk(.quiet, compact: true))
-            .disabled(saving)
         }
         .padding(.horizontal, Space.screen)
         .padding(.top, Space.m)
@@ -107,9 +140,11 @@ struct SessionView: View {
                     Text(exercise.name)
                         .font(Typeface.cardTitle)
                         .foregroundStyle(Palette.ink)
+                        .staerkWrappingText()
                     Text("\(exercise.muscleGroup.localizedName) · \(exercise.defaultSets) × \(exercise.defaultRepsMin)–\(exercise.defaultRepsMax)")
                         .font(.footnote)
                         .foregroundStyle(Palette.inkSecondary)
+                        .staerkWrappingText()
                 }
                 Spacer(minLength: 0)
                 NavigationLink {
@@ -128,7 +163,7 @@ struct SessionView: View {
                 Text(exercise.notes)
                     .font(.footnote)
                     .foregroundStyle(Palette.inkSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .staerkWrappingText()
                     .padding(.top, Space.m)
             }
 
@@ -233,14 +268,31 @@ struct SessionView: View {
         guard !didLoad else { return }
         guard let pick = ScheduleResolver.pickWorkout(schedule: schedule, workouts: workouts, sessions: sessions) else { return }
         workoutID = pick.id
-        loadBlocks(for: pick.id)
+        applyWorkout(pick)
         startedAt = Date()
         didLoad = true
     }
 
     private func switchWorkout(_ id: String) {
         workoutID = id
-        loadBlocks(for: id)
+        if let workout = workouts.first(where: { $0.id == id }) {
+            applyWorkout(workout)
+        } else {
+            loadBlocks(for: id)
+        }
+    }
+
+    private func applyWorkout(_ workout: WorkoutPlan) {
+        if workout.isCircuit {
+            let last = CircuitProgress.lastCircuit(in: sessions, workoutID: workout.id)
+            durationMinutes = Double(last?.durationMinutes ?? workout.targetDurationMinutes ?? 30)
+            rounds = Double(last?.rounds ?? workout.targetRounds ?? 2)
+            effort = nil
+            note = ""
+            blocks = []
+        } else {
+            loadBlocks(for: workout.id)
+        }
     }
 
     private func loadBlocks(for workoutID: String) {
@@ -253,7 +305,7 @@ struct SessionView: View {
         }
     }
 
-    private func complete(done: Bool) async {
+    private func completeDetailed(done: Bool) async {
         guard let resolved else { return }
         saving = true
         let session = SessionLog(
@@ -263,18 +315,50 @@ struct SessionView: View {
             completed: done,
             startedAt: startedAt,
             finishedAt: Date(),
-            exercises: blocks
+            exercises: blocks,
+            kind: .detailed
         )
         try? app.sessions.save(session)
         if done {
-            await health.saveStrengthWorkout(start: startedAt, end: Date())
-            if let workoutHabit = habitRows.map({ $0.asDomain() }).first(where: { $0.kind == .workout && !$0.archived }) {
-                let entry = HabitEntry(habitID: workoutHabit.id, dateKey: Dates.key(), boolValue: true)
-                try? app.habits.upsert(entry)
-            }
+            await health.saveWorkout(kind: .detailed, start: startedAt, end: session.healthKitEndDate)
+            markWorkoutHabit()
             Haptics.celebrate()
         }
         saving = false
         dismiss()
+    }
+
+    private func completeCircuit() async {
+        guard let resolved else { return }
+        saving = true
+        let elapsed = max(1, Int(Date().timeIntervalSince(startedAt) / 60))
+        let typedDuration = Int(durationMinutes.rounded())
+        let session = SessionLog(
+            dateKey: Dates.key(),
+            workoutID: resolved.id,
+            workoutName: resolved.name,
+            completed: true,
+            startedAt: startedAt,
+            finishedAt: Date(),
+            note: note,
+            exercises: [],
+            kind: .circuit,
+            durationMinutes: typedDuration > 0 ? typedDuration : elapsed,
+            rounds: Int(rounds.rounded()),
+            effort: effort
+        )
+        try? app.sessions.save(session)
+        await health.saveWorkout(kind: .circuit, start: startedAt, end: session.healthKitEndDate)
+        markWorkoutHabit()
+        Haptics.celebrate()
+        saving = false
+        dismiss()
+    }
+
+    private func markWorkoutHabit() {
+        if let workoutHabit = habitRows.map({ $0.asDomain() }).first(where: { $0.kind == .workout && !$0.archived }) {
+            let entry = HabitEntry(habitID: workoutHabit.id, dateKey: Dates.key(), boolValue: true)
+            try? app.habits.upsert(entry)
+        }
     }
 }

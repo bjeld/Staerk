@@ -82,13 +82,13 @@
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STRK gemmer styrketræning og kropsvægt i Apple Sundhed, så dine pas og din vægt hænger sammen med Fitness og Sundhed."
+            "value" : "STRK gemmer styrke- og cirkeltræning samt kropsvægt i Apple Sundhed, så dine pas og din vægt hænger sammen med Fitness og Sundhed."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "STRK saves strength training and body mass to Apple Health so your sessions and weight stay in sync with Fitness and Health."
+            "value" : "STRK saves strength and circuit training plus body mass to Apple Health so your sessions and weight stay in sync with Fitness and Health."
           }
         }
       }

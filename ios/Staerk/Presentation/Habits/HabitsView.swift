@@ -8,6 +8,7 @@ struct HabitsView: View {
     @Query private var entryRows: [HabitEntryRecord]
     @Query(sort: \SessionRecord.dateKey) private var sessionRows: [SessionRecord]
     @Query private var exerciseRows: [ExerciseRecord]
+    @Query private var scheduleRows: [ScheduleRecord]
     @State private var cursor = Date()
     @State private var editor: Habit?
 
@@ -17,6 +18,8 @@ struct HabitsView: View {
     private var today: String { Dates.key() }
     private var week: [String] { Dates.weekKeys() }
     private var trainedDates: Set<String> { Set(sessions.filter(\.completed).map(\.dateKey)) }
+    private var schedule: WeeklySchedule { scheduleRows.first?.asDomain() ?? WeeklySchedule() }
+    private var showsCircuitProgress: Bool { sessions.contains(where: \.isCircuit) }
 
     var body: some View {
         Screen {
@@ -38,6 +41,16 @@ struct HabitsView: View {
             } else {
                 weekCard
                 habitList
+                if showsCircuitProgress {
+                    CircuitProgressCard(
+                        summary: CircuitProgress.summary(
+                            sessions: sessions,
+                            schedule: schedule,
+                            today: today,
+                            weekKeys: week
+                        )
+                    )
+                }
                 muscleVolume
                 calendar
             }
@@ -141,7 +154,7 @@ struct HabitsView: View {
                 Text(habit.name)
                     .font(Typeface.rowTitle)
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
+                    .staerkWrappingText()
                 HStack(spacing: Space.xs) {
                     Image(systemName: "flame.fill")
                         .font(.caption.weight(.bold))
@@ -184,6 +197,7 @@ struct HabitsView: View {
 
     // MARK: Volume
 
+    @ViewBuilder
     private var muscleVolume: some View {
         let muscleMap = Dictionary(uniqueKeysWithValues: exerciseRows.map { ($0.id, MuscleGroup(rawValue: $0.muscleGroupRaw) ?? .legs) })
         let volume = ProgressionCalculator.weeklySetVolume(
@@ -195,13 +209,16 @@ struct HabitsView: View {
         let data = MuscleGroup.allCases.map { MuscleVolume(id: $0.rawValue, name: $0.localizedName, sets: volume[$0] ?? 0) }
         let empty = data.allSatisfy { $0.sets == 0 }
         let total = data.reduce(0) { $0 + $1.sets }
-
-        return TitledSection(title: L10n.string("habits.volume"), detail: empty ? nil : "\(total)") {
-            Card(padding: empty ? 0 : Space.xl) {
-                if empty {
-                    EmptyState(symbol: "chart.bar", message: L10n.string("habits.volume.empty"))
-                } else {
-                    BarList(items: data.map { BarListItem(id: $0.id, label: $0.name, value: $0.sets) })
+        if empty && showsCircuitProgress {
+            EmptyView()
+        } else {
+            TitledSection(title: L10n.string("habits.volume"), detail: empty ? nil : "\(total)") {
+                Card(padding: empty ? 0 : Space.xl) {
+                    if empty {
+                        EmptyState(symbol: "chart.bar", message: L10n.string("habits.volume.empty"))
+                    } else {
+                        BarList(items: data.map { BarListItem(id: $0.id, label: $0.name, value: $0.sets) })
+                    }
                 }
             }
         }

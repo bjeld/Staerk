@@ -102,7 +102,7 @@ struct SettingsView: View {
                     Text(L10n.string("settings.reminders.hint"))
                         .font(.footnote)
                         .foregroundStyle(Palette.inkSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .staerkWrappingText()
                         .padding(.top, Space.m)
                     SecondaryButton(title: L10n.string("settings.reminders.allow")) {
                         Task { await enableReminders() }
@@ -147,7 +147,7 @@ struct SettingsView: View {
                     Text(L10n.string("settings.backup.hint"))
                         .font(.footnote)
                         .foregroundStyle(Palette.inkSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .staerkWrappingText()
                         .padding(.horizontal, Space.xs)
                 }
             }
@@ -241,7 +241,7 @@ struct SettingsView: View {
             Text(L10n.string("health.detail"))
                 .font(.footnote)
                 .foregroundStyle(Palette.inkSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+                .staerkWrappingText()
                 .padding(.top, Space.m)
             if health.showsDeniedHelp {
                 Text(L10n.string("health.denied"))

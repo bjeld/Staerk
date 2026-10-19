@@ -13,7 +13,7 @@ struct OnboardingView: View {
         HabitCatalog.alcoholFree.id,
         HabitCatalog.workout.id
     ]
-    @State private var programID: String = ProgramCatalog.fullBody.id
+    @State private var programID: String = ProgramCatalog.loop.id
     @State private var saving = false
 
     private var templates: [HabitTemplate] { HabitCatalog.all }
@@ -94,7 +94,7 @@ struct OnboardingView: View {
             Text(L10n.string("onboarding.welcome.body"))
                 .font(.body)
                 .foregroundStyle(Palette.inkSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+                .staerkWrappingText()
             Spacer()
         }
         .padding(.horizontal, Space.screen + Space.xs)
@@ -194,11 +194,14 @@ struct OnboardingView: View {
                             Text(ProgramCatalog.localizedName(program))
                                 .font(Typeface.title(22))
                                 .foregroundStyle(Palette.ink)
+                                .staerkWrappingText()
+                            Text((program.workouts.first?.kind ?? .detailed).localizedName)
+                                .font(Typeface.eyebrow)
+                                .foregroundStyle(Palette.accentInk)
                             Text(ProgramCatalog.localizedNotes(program))
                                 .font(.subheadline)
                                 .foregroundStyle(Palette.inkSecondary)
-                                .multilineTextAlignment(.leading)
-                                .fixedSize(horizontal: false, vertical: true)
+                                .staerkWrappingText()
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         SelectionIndicator(isOn: on)
@@ -249,6 +252,7 @@ struct OnboardingView: View {
             Text(L10n.string("onboarding.done.body"))
                 .font(.body)
                 .foregroundStyle(Palette.inkSecondary)
+                .staerkWrappingText()
             Spacer()
         }
         .padding(.horizontal, Space.screen + Space.xs)

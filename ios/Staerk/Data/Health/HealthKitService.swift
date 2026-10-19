@@ -92,12 +92,13 @@ final class HealthKitService: HealthServing {
         )
     }
 
-    func saveStrengthWorkout(start: Date, end: Date) async {
+    func saveWorkout(kind: WorkoutKind, start: Date, end: Date) async {
         guard isAvailable else { return }
         guard store.authorizationStatus(for: HKObjectType.workoutType()) == .sharingAuthorized else { return }
 
+        let safeEnd = end > start ? end : start.addingTimeInterval(60)
         let config = HKWorkoutConfiguration()
-        config.activityType = .traditionalStrengthTraining
+        config.activityType = kind.isCircuit ? .functionalStrengthTraining : .traditionalStrengthTraining
         config.locationType = .indoor
 
         let builder = HKWorkoutBuilder(healthStore: store, configuration: config, device: .local())
@@ -107,7 +108,7 @@ final class HealthKitService: HealthServing {
                 HKMetadataKeyWorkoutBrandName: "Staerk",
                 HKMetadataKeyIndoorWorkout: true
             ])
-            try await builder.endCollection(at: end)
+            try await builder.endCollection(at: safeEnd)
             _ = try await builder.finishWorkout()
         } catch {
             lastError = error.localizedDescription
@@ -191,7 +192,8 @@ final class HealthKitService: HealthServing {
         case .golf: return .golf
         case .walking: return .walking
         case .running: return .running
-        case .traditionalStrengthTraining, .functionalStrengthTraining: return .strength
+        case .functionalStrengthTraining: return .circuit
+        case .traditionalStrengthTraining: return .strength
         default: return .other
         }
     }

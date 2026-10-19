@@ -8,8 +8,10 @@ struct ProgramEditorView: View {
     @Query(sort: \ExerciseRecord.sortOrder) private var exerciseRows: [ExerciseRecord]
     @State private var programName: String = ""
     @State private var editingExercise: ExerciseDefinition?
+    @State private var editingWorkout: WorkoutPlan?
     @State private var confirmTemplate: ProgramBlueprint?
     @State private var newWorkoutName = ""
+    @State private var newWorkoutKind: WorkoutKind = .detailed
 
     private var program: TrainingProgram? { programRows.first { $0.isActive }?.asDomain() ?? programRows.first?.asDomain() }
     private var workouts: [WorkoutPlan] {
@@ -38,21 +40,29 @@ struct ProgramEditorView: View {
                 workoutSection(workout)
             }
 
-            Card(padding: Space.m) {
-                HStack(spacing: Space.m) {
-                    TextField(L10n.string("program.workout.name"), text: $newWorkoutName)
-                        .font(.body)
-                        .padding(.leading, Space.s)
-                        .submitLabel(.done)
-                        .onSubmit(addWorkout)
-                    Button {
-                        Haptics.tap()
-                        addWorkout()
-                    } label: {
-                        ButtonLabel(title: L10n.string("program.workout.add"), symbol: "plus")
+            Card {
+                VStack(alignment: .leading, spacing: Space.m) {
+                    Eyebrow(text: L10n.string("program.workout.kind"))
+                    Picker(L10n.string("program.workout.kind"), selection: $newWorkoutKind) {
+                        ForEach(WorkoutKind.allCases) { kind in
+                            Text(kind.localizedName).tag(kind)
+                        }
                     }
-                    .buttonStyle(.staerk(.primary, compact: true))
-                    .disabled(newWorkoutName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .pickerStyle(.segmented)
+                    HStack(spacing: Space.m) {
+                        TextField(L10n.string("program.workout.name"), text: $newWorkoutName)
+                            .font(.body)
+                            .submitLabel(.done)
+                            .onSubmit(addWorkout)
+                        Button {
+                            Haptics.tap()
+                            addWorkout()
+                        } label: {
+                            ButtonLabel(title: L10n.string("program.workout.add"), symbol: "plus")
+                        }
+                        .buttonStyle(.staerk(.primary, compact: true))
+                        .disabled(newWorkoutName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
                 }
             }
 
@@ -64,7 +74,7 @@ struct ProgramEditorView: View {
                         } label: {
                             ListRow(
                                 title: ProgramCatalog.localizedName(blueprint),
-                                detail: ProgramCatalog.localizedNotes(blueprint)
+                                detail: "\((blueprint.workouts.first?.kind ?? .detailed).localizedName) · \(ProgramCatalog.localizedNotes(blueprint))"
                             ) {
                                 IconBadge(symbol: "square.stack.3d.up.fill", tint: Palette.accent, size: 36)
                             } trailing: {
@@ -82,6 +92,9 @@ struct ProgramEditorView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editingExercise) { exercise in
             ExerciseEditorView(exercise: exercise)
+        }
+        .sheet(item: $editingWorkout) { workout in
+            WorkoutEditorView(workout: workout)
         }
         .confirmationDialog(
             L10n.string("program.replace.confirm"),
@@ -103,19 +116,69 @@ struct ProgramEditorView: View {
     private func workoutSection(_ workout: WorkoutPlan) -> some View {
         let items = exerciseRows.filter { $0.workoutID == workout.id && !$0.archived }.map { $0.asDomain() }
         return TitledSection(title: workout.name) {
-            Button(role: .destructive) {
-                Haptics.warn()
-                try? app.training.deleteWorkout(id: workout.id)
-            } label: {
-                Image(systemName: "trash")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Palette.danger)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
+            HStack(spacing: 0) {
+                Button {
+                    Haptics.tap()
+                    editingWorkout = workout
+                } label: {
+                    Image(systemName: "pencil")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Palette.accentInk)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableStyle(scale: 0.9))
+                .accessibilityLabel(L10n.string("common.edit"))
+                Button(role: .destructive) {
+                    Haptics.warn()
+                    try? app.training.deleteWorkout(id: workout.id)
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Palette.danger)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableStyle(scale: 0.9))
+                .accessibilityLabel(L10n.string("common.delete.workout"))
             }
-            .buttonStyle(PressableStyle(scale: 0.9))
-            .accessibilityLabel(L10n.string("common.delete.workout"))
         } content: {
+            if workout.isCircuit {
+                Card {
+                    VStack(alignment: .leading, spacing: Space.s) {
+                        Pill(text: workout.kind.localizedName, tint: Palette.accent, filled: false)
+                        if !workout.trimmedLocation.isEmpty {
+                            Text(workout.trimmedLocation)
+                                .font(.subheadline)
+                                .foregroundStyle(Palette.ink)
+                                .staerkWrappingText()
+                        }
+                        if let minutes = workout.targetDurationMinutes {
+                            Text(L10n.format("circuit.target.duration", minutes))
+                                .font(.footnote)
+                                .foregroundStyle(Palette.inkSecondary)
+                        }
+                        if let rounds = workout.targetRounds {
+                            Text(L10n.format("circuit.target.rounds", rounds))
+                                .font(.footnote)
+                                .foregroundStyle(Palette.inkSecondary)
+                        }
+                        if workout.stations.isEmpty {
+                            Text(L10n.string("training.nostations"))
+                                .font(.subheadline)
+                                .foregroundStyle(Palette.inkSecondary)
+                                .staerkWrappingText()
+                        } else {
+                            ForEach(Array(workout.stations.enumerated()), id: \.element.id) { index, station in
+                                Text("\(index + 1). \(station.name)")
+                                    .font(.body)
+                                    .foregroundStyle(Palette.ink)
+                                    .staerkWrappingText()
+                            }
+                        }
+                    }
+                }
+            } else {
             Card(padding: 0) {
                 ForEach(items) { exercise in
                     HStack(spacing: 0) {
@@ -177,6 +240,7 @@ struct ProgramEditorView: View {
                 }
                 .buttonStyle(.pressable)
             }
+            }
         }
     }
 
@@ -192,18 +256,25 @@ struct ProgramEditorView: View {
         guard let program else {
             let created = TrainingProgram(name: L10n.string("program.default.name"), isActive: true)
             try? app.training.save(created)
-            let workout = WorkoutPlan(programID: created.id, name: newWorkoutName.trimmingCharacters(in: .whitespaces))
+            let workout = WorkoutPlan(
+                programID: created.id,
+                name: newWorkoutName.trimmingCharacters(in: .whitespaces),
+                kind: newWorkoutKind
+            )
             try? app.training.save(workout)
             newWorkoutName = ""
+            editingWorkout = workout
             return
         }
         let workout = WorkoutPlan(
             programID: program.id,
             name: newWorkoutName.trimmingCharacters(in: .whitespaces),
-            sortOrder: (workouts.map(\.sortOrder).max() ?? -1) + 1
+            sortOrder: (workouts.map(\.sortOrder).max() ?? -1) + 1,
+            kind: newWorkoutKind
         )
         try? app.training.save(workout)
         newWorkoutName = ""
+        editingWorkout = workout
     }
 
     private func applyTemplate(_ blueprint: ProgramBlueprint) {
@@ -275,6 +346,132 @@ struct ExerciseEditorView: View {
             }
         }
         .presentationDetents([.large])
+    }
+}
+
+struct WorkoutEditorView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(AppContainer.self) private var app
+    @State var workout: WorkoutPlan
+    @State private var stationDraft = ""
+    @State private var targetRounds: Int
+    @State private var targetMinutes: Int
+
+    init(workout: WorkoutPlan) {
+        _workout = State(initialValue: workout)
+        _targetRounds = State(initialValue: workout.targetRounds ?? 0)
+        _targetMinutes = State(initialValue: workout.targetDurationMinutes ?? 0)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(L10n.string("program.workout.name"), text: $workout.name)
+                    Picker(L10n.string("program.workout.kind"), selection: $workout.kind) {
+                        ForEach(WorkoutKind.allCases) { kind in
+                            Text(kind.localizedName).tag(kind)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                if workout.isCircuit {
+                    Section(L10n.string("program.workout.location")) {
+                        TextField(L10n.string("program.workout.location.placeholder"), text: $workout.location)
+                    }
+                    Section {
+                        Stepper(
+                            targetMinutes == 0
+                                ? L10n.string("program.workout.target.duration.off")
+                                : L10n.format("circuit.target.duration", targetMinutes),
+                            value: $targetMinutes,
+                            in: 0...180,
+                            step: 5
+                        )
+                        Stepper(
+                            targetRounds == 0
+                                ? L10n.string("program.workout.target.rounds.off")
+                                : L10n.format("circuit.target.rounds", targetRounds),
+                            value: $targetRounds,
+                            in: 0...20
+                        )
+                    }
+                    Section(L10n.string("program.workout.stations")) {
+                        ForEach(Array(workout.stations.enumerated()), id: \.element.id) { index, _ in
+                            HStack {
+                                TextField(
+                                    L10n.string("program.workout.station.name"),
+                                    text: Binding(
+                                        get: { workout.stations[index].name },
+                                        set: { workout.stations[index].name = $0 }
+                                    )
+                                )
+                                Button(role: .destructive) {
+                                    workout.stations.remove(at: index)
+                                    reindexStations()
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                }
+                                .frame(width: 44, height: 44)
+                            }
+                        }
+                        HStack {
+                            TextField(L10n.string("program.workout.station.add"), text: $stationDraft)
+                            Button(L10n.string("program.workout.add")) {
+                                addStation()
+                            }
+                            .disabled(stationDraft.trimmingCharacters(in: .whitespaces).isEmpty)
+                        }
+                    }
+                }
+            }
+            .staerkFormKeyboard()
+            .staerkKeyboardDone()
+            .navigationTitle(L10n.string("program.edit.workout"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.string("common.cancel")) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L10n.string("common.save")) {
+                        save()
+                    }
+                    .disabled(workout.name.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.large])
+    }
+
+    private func addStation() {
+        let name = stationDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        workout.stations.append(
+            CircuitStation(name: name, sortOrder: workout.stations.count)
+        )
+        stationDraft = ""
+    }
+
+    private func reindexStations() {
+        for index in workout.stations.indices {
+            workout.stations[index].sortOrder = index
+        }
+    }
+
+    private func save() {
+        workout.stations = workout.stations
+            .map { station in
+                var copy = station
+                copy.name = station.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                return copy
+            }
+            .filter { !$0.name.isEmpty }
+        reindexStations()
+        workout.targetRounds = targetRounds > 0 ? targetRounds : nil
+        workout.targetDurationMinutes = targetMinutes > 0 ? targetMinutes : nil
+        try? app.training.save(workout)
+        dismiss()
     }
 }
 

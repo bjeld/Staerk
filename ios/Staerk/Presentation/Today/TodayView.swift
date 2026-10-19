@@ -8,6 +8,7 @@ struct TodayView: View {
     @Query private var entryRows: [HabitEntryRecord]
     @Query private var settingsRows: [SettingsRecord]
     @Query(sort: \SessionRecord.dateKey, order: .reverse) private var sessionRows: [SessionRecord]
+    @Query private var programRows: [ProgramRecord]
     @Query private var workoutRows: [WorkoutRecord]
     @Query private var scheduleRows: [ScheduleRecord]
     @Query(filter: #Predicate<ExerciseRecord> { !$0.archived }, sort: \ExerciseRecord.sortOrder)
@@ -23,11 +24,23 @@ struct TodayView: View {
     }
     private var sessions: [SessionLog] { sessionRows.map { $0.asDomain() } }
     private var schedule: WeeklySchedule { scheduleRows.first?.asDomain() ?? WeeklySchedule() }
-    private var workouts: [WorkoutPlan] { workoutRows.map { $0.asDomain() } }
-    private var dayPlan: DayPlan { ScheduleResolver.plan(on: Date(), schedule: schedule, workouts: workouts) }
-    private var todaysHabits: [Habit] { habits.filter { $0.applies(onKey: todayKey) } }
+    private var program: TrainingProgram? {
+        programRows.first { $0.isActive }?.asDomain() ?? programRows.first?.asDomain()
+    }
+    private var workouts: [WorkoutPlan] {
+        guard let program else { return [] }
+        return workoutRows.filter { $0.programID == program.id }.map { $0.asDomain() }
+    }
+    private var hasWorkouts: Bool { !workouts.isEmpty }
+    private var visibleHabits: [Habit] {
+        HabitScoring.excludingDanglingWorkoutHabits(habits, hasWorkouts: hasWorkouts)
+    }
+    private var dayStatus: DayTrainingStatus {
+        ScheduleResolver.status(on: Date(), schedule: schedule, workouts: workouts)
+    }
+    private var todaysHabits: [Habit] { visibleHabits.filter { $0.applies(onKey: todayKey) } }
     private var trainedToday: Bool {
-        sessions.contains { $0.dateKey == todayKey && $0.completed }
+        hasWorkouts && sessions.contains { $0.dateKey == todayKey && $0.completed }
     }
     private var todaySession: SessionLog? {
         sessions.first { $0.dateKey == todayKey && $0.completed }
@@ -50,9 +63,9 @@ struct TodayView: View {
         let trained = Set(sessions.filter(\.completed).map(\.dateKey))
         for key in week {
             map[key] = HabitScoring.dayRatio(
-                habits: habits,
+                habits: visibleHabits,
                 entries: grouped[key] ?? [],
-                trained: trained.contains(key),
+                trained: hasWorkouts && trained.contains(key),
                 dateKey: key
             )
         }
@@ -136,23 +149,25 @@ struct TodayView: View {
             RowDivider()
                 .padding(.vertical, Space.xl)
 
-            planRow
+            if dayStatus.showsStatus {
+                planRow
 
-            if dayPlan.isTrainingDay {
-                NavigationLink {
-                    if let todaySession {
-                        SessionDetailView(sessionID: todaySession.id)
-                    } else {
-                        SessionView()
+                if dayStatus.isTrainingDay {
+                    NavigationLink {
+                        if let todaySession {
+                            SessionDetailView(sessionID: todaySession.id)
+                        } else {
+                            SessionView()
+                        }
+                    } label: {
+                        ButtonLabel(
+                            title: todayCTA,
+                            symbol: todaySession == nil ? "play.fill" : nil
+                        )
                     }
-                } label: {
-                    ButtonLabel(
-                        title: todaySession == nil ? L10n.string("today.start.workout") : L10n.string("today.see.workout"),
-                        symbol: todaySession == nil ? "play.fill" : nil
-                    )
+                    .buttonStyle(todaySession == nil ? .staerkPrimary : .staerkSecondary)
+                    .padding(.top, Space.l)
                 }
-                .buttonStyle(todaySession == nil ? .staerkPrimary : .staerkSecondary)
-                .padding(.top, Space.l)
             }
         }
     }
@@ -196,24 +211,25 @@ struct TodayView: View {
     private var planRow: some View {
         HStack(alignment: .top, spacing: Space.m) {
             IconBadge(
-                symbol: dayPlan.isTrainingDay ? "dumbbell.fill" : "figure.walk",
+                symbol: dayStatus.isTrainingDay ? "dumbbell.fill" : "figure.walk",
                 tint: Palette.accent,
                 size: 44,
                 style: todaySession != nil ? .solid : .soft
             )
             VStack(alignment: .leading, spacing: Space.xxs) {
                 Eyebrow(
-                    text: dayPlan.isTrainingDay ? L10n.string("today.train") : L10n.string("today.rest"),
+                    text: dayStatus.isTrainingDay ? L10n.string("today.train") : L10n.string("today.rest"),
                     color: Palette.accentInk
                 )
                 Text(heroTitle)
                     .font(.headline)
                     .foregroundStyle(Palette.ink)
+                    .staerkWrappingText()
                 if !heroSubtitle.isEmpty {
                     Text(heroSubtitle)
                         .font(.subheadline)
                         .foregroundStyle(Palette.inkSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .staerkWrappingText()
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -222,7 +238,7 @@ struct TodayView: View {
     }
 
     private var heroTitle: String {
-        if let workout = dayPlan.workout {
+        if let workout = dayStatus.workout {
             if todaySession != nil {
                 return L10n.format("today.workout.done", workout.name)
             }
@@ -232,14 +248,30 @@ struct TodayView: View {
     }
 
     private var heroSubtitle: String {
-        if dayPlan.isTrainingDay {
+        if let workout = dayStatus.workout, workout.isCircuit {
+            if !workout.trimmedLocation.isEmpty {
+                return workout.trimmedLocation
+            }
+            return L10n.string("workout.kind.circuit")
+        }
+        if let workout = dayStatus.workout {
             let names = exerciseRows
-                .filter { $0.workoutID == dayPlan.workout?.id }
+                .filter { $0.workoutID == workout.id }
                 .map { $0.asDomain().muscleGroup.localizedName }
             let unique = Array(NSOrderedSet(array: names)) as? [String] ?? names
             return unique.joined(separator: " · ")
         }
         return L10n.string("today.rest.body")
+    }
+
+    private var todayCTA: String {
+        if todaySession != nil {
+            return L10n.string("today.see.workout")
+        }
+        if dayStatus.workout?.isCircuit == true {
+            return L10n.string("training.start.circuit")
+        }
+        return L10n.string("today.start.workout")
     }
 
     // MARK: Habits
@@ -638,14 +670,12 @@ private struct HabitCheckTile: View {
                 Text(title)
                     .font(Typeface.rowTitle)
                     .foregroundStyle(isOn ? tint.onTint : Palette.ink)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
+                    .staerkWrappingText()
                 if !hint.isEmpty {
                     Text(hint)
                         .font(.footnote)
                         .foregroundStyle(isOn ? tint.onTint.opacity(0.72) : Palette.inkSecondary)
-                        .lineLimit(3)
-                        .multilineTextAlignment(.leading)
+                        .staerkWrappingText()
                         .padding(.top, Space.xxs)
                 }
             }
@@ -704,7 +734,7 @@ private struct HabitCounterTile: View {
             Text(title)
                 .font(Typeface.rowTitle)
                 .foregroundStyle(isComplete ? tint.onTint : Palette.ink)
-                .lineLimit(2)
+                .staerkWrappingText()
             HStack(alignment: .bottom) {
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text("\(value)")

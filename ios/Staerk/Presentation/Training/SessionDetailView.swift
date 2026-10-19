@@ -30,6 +30,10 @@ struct SessionDetailView: View {
 
                     summary(session)
 
+                    if session.isCircuit {
+                        circuitCard(session)
+                    }
+
                     ForEach(session.exercises) { block in
                         exerciseCard(block)
                     }
@@ -55,17 +59,69 @@ struct SessionDetailView: View {
     }
 
     private func summary(_ session: SessionLog) -> some View {
-        let minutes = session.finishedAt.map { max(1, Int($0.timeIntervalSince(session.startedAt) / 60)) }
+        let minutes = session.resolvedDurationMinutes
+            ?? session.finishedAt.map { max(1, Int($0.timeIntervalSince(session.startedAt) / 60)) }
         return Card(padding: Space.l) {
             HStack(spacing: 0) {
-                stat(value: "\(session.doneSetCount)", label: L10n.string("session.sets"))
-                divider
-                stat(value: "\(session.exercises.count)", label: L10n.string("training.exercises"))
-                if let minutes {
+                if session.isCircuit {
+                    if let minutes {
+                        stat(value: "\(minutes)", label: L10n.string("circuit.duration"))
+                    }
+                    if let rounds = session.rounds {
+                        divider
+                        stat(value: "\(rounds)", label: L10n.string("circuit.rounds"))
+                    }
+                    if let effort = session.effort {
+                        divider
+                        stat(value: "\(effort)", label: L10n.string("circuit.effort"))
+                    }
+                } else {
+                    stat(value: "\(session.doneSetCount)", label: L10n.string("session.sets"))
                     divider
-                    stat(value: "\(minutes)", label: "min")
+                    stat(value: "\(session.exercises.count)", label: L10n.string("training.exercises"))
+                    if let minutes {
+                        divider
+                        stat(value: "\(minutes)", label: "min")
+                    }
                 }
             }
+        }
+    }
+
+    private func circuitCard(_ session: SessionLog) -> some View {
+        Card {
+            VStack(alignment: .leading, spacing: Space.s) {
+                Pill(text: L10n.string("workout.kind.circuit"), tint: Palette.accent, filled: false)
+                if let minutes = session.resolvedDurationMinutes {
+                    detailRow(L10n.string("circuit.duration"), L10n.format("circuit.minutes.short", minutes))
+                }
+                if let rounds = session.rounds {
+                    detailRow(L10n.string("circuit.rounds"), "\(rounds)")
+                }
+                if let effort = session.effort {
+                    detailRow(L10n.string("circuit.effort"), L10n.format("circuit.effort.short", effort))
+                }
+                if let note = session.note, !note.isEmpty {
+                    Text(note)
+                        .font(.body)
+                        .foregroundStyle(Palette.ink)
+                        .staerkWrappingText()
+                        .padding(.top, Space.xs)
+                }
+            }
+        }
+    }
+
+    private func detailRow(_ title: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(Palette.inkSecondary)
+                .staerkWrappingText()
+            Spacer()
+            Text(value)
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+                .foregroundStyle(Palette.ink)
         }
     }
 
@@ -96,6 +152,7 @@ struct SessionDetailView: View {
                     Text(block.name.isEmpty ? block.exerciseId : block.name)
                         .font(Typeface.cardTitle)
                         .foregroundStyle(Palette.ink)
+                        .staerkWrappingText()
                     Text(block.muscleGroup.localizedName)
                         .font(.footnote)
                         .foregroundStyle(Palette.inkSecondary)

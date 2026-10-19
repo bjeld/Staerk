@@ -36,7 +36,7 @@
 	<key>NSHealthShareUsageDescription</key>
 	<string>STRK læser skridt, gang- og løbeafstand, aktiv energi, træningspas (herunder golf) og kropsvægt fra Apple Sundhed, så dagens aktivitet kan vises på oversigten.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>STRK gemmer styrketræning og kropsvægt i Apple Sundhed, så dine pas og din vægt hænger sammen med Fitness og Sundhed.</string>
+	<string>STRK gemmer styrke- og cirkeltræning samt kropsvægt i Apple Sundhed, så dine pas og din vægt hænger sammen med Fitness og Sundhed.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

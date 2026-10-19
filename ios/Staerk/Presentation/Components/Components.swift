@@ -45,7 +45,7 @@ struct ScreenHeader<Trailing: View>: View {
                     Text(subtitle)
                         .font(.subheadline)
                         .foregroundStyle(Palette.inkSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .staerkWrappingText()
                         .padding(.top, Space.xxs)
                 }
             }
@@ -168,18 +168,18 @@ struct ListRow<Leading: View, Trailing: View>: View {
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
-        HStack(spacing: Space.m) {
+        HStack(alignment: .top, spacing: Space.m) {
             leading
             VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(title)
                     .font(Typeface.rowTitle)
                     .foregroundStyle(Palette.ink)
-                    .multilineTextAlignment(.leading)
+                    .staerkWrappingText()
                 if let detail, !detail.isEmpty {
                     Text(detail)
                         .font(Typeface.rowDetail)
                         .foregroundStyle(Palette.inkSecondary)
-                        .multilineTextAlignment(.leading)
+                        .staerkWrappingText()
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
